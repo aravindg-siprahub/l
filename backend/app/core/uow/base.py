@@ -1,0 +1,21 @@
+from abc import ABC, abstractmethod
+from typing import Any
+
+class IUnitOfWork(ABC):
+    """Abstract base class for the Unit of Work pattern."""
+    
+    @abstractmethod
+    async def __aenter__(self) -> "IUnitOfWork":
+        pass
+
+    @abstractmethod
+    async def __aexit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
+        pass
+
+    @abstractmethod
+    async def commit(self) -> None:
+        pass
+
+    @abstractmethod
+    async def rollback(self) -> None:
+        pass
