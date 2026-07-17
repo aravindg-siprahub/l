@@ -1,7 +1,24 @@
-from fastapi import FastAPI, APIRouter
+# Suppress PendingDeprecationWarning from starlette's legacy multipart import.
+# Must be first — fires before starlette.formparsers is loaded.
+import warnings
+warnings.filterwarnings(
+    "ignore",
+    message="Please use `import python_multipart` instead.",
+    category=PendingDeprecationWarning,
+)
+
+from fastapi import FastAPI, APIRouter, Request
+from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
+import logging
 
 from app.core.config import settings
+from app.core.logging import setup_logging
+from app.core.exceptions import DomainError, ApplicationError, InfrastructureError
+
+# Initialize structured logging
+setup_logging()
+logger = logging.getLogger(__name__)
 
 def create_app() -> FastAPI:
     """Application factory for FastAPI."""
@@ -20,6 +37,31 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
     )
 
+    # Exception Handlers
+    @app.exception_handler(DomainError)
+    async def domain_error_handler(request: Request, exc: DomainError):
+        logger.warning(f"Domain Error: {exc.message}")
+        return JSONResponse(
+            status_code=400,
+            content={"error": "DomainError", "message": exc.message, "details": exc.details},
+        )
+
+    @app.exception_handler(ApplicationError)
+    async def application_error_handler(request: Request, exc: ApplicationError):
+        logger.warning(f"Application Error: {exc.message}")
+        return JSONResponse(
+            status_code=400,
+            content={"error": "ApplicationError", "message": exc.message, "details": exc.details},
+        )
+
+    @app.exception_handler(InfrastructureError)
+    async def infrastructure_error_handler(request: Request, exc: InfrastructureError):
+        logger.error(f"Infrastructure Error: {exc.message}")
+        return JSONResponse(
+            status_code=503,
+            content={"error": "InfrastructureError", "message": "Service unavailable", "details": exc.details},
+        )
+
     # Global Health Check
     @app.get("/health", tags=["Health"])
     async def health_check():
@@ -30,9 +72,20 @@ def create_app() -> FastAPI:
     api_router = APIRouter(prefix=settings.API_V1_STR)
     
     from app.api.endpoints.foundation import router as foundation_router
+    from app.api.endpoints.public import router as public_router
+    from app.api.endpoints.auth import router as auth_router
+    from app.api.endpoints.timesheets import router as timesheets_router
+    from app.api.endpoints.finance import router as finance_router
+    from app.api.endpoints.invoices import router as invoices_router
+
     api_router.include_router(foundation_router, prefix="/foundation", tags=["Foundation Validation"])
-    
-    # Mount router (future endpoints like /timesheets will go here)
+    api_router.include_router(public_router, prefix="/public", tags=["Public"])
+    api_router.include_router(auth_router, prefix="/auth", tags=["Authentication"])
+    api_router.include_router(timesheets_router, prefix="/timesheets", tags=["Timesheets"])
+    api_router.include_router(finance_router, prefix="/finance", tags=["Finance"])
+    api_router.include_router(invoices_router, prefix="/invoices", tags=["Invoices"])
+
+    # Mount router
     app.include_router(api_router)
 
     return app

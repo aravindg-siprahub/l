@@ -10,3 +10,6 @@ redis==5.0.7
 greenlet==3.0.3
 
 aiosqlite
+psycopg[binary]
+python-jose[cryptography] 
+bcrypt

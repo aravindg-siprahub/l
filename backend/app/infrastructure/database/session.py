@@ -1,46 +1,46 @@
-from typing import AsyncGenerator
+from typing import Generator
 
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker, Session
 
 from app.core.config import settings
 
 # Determine engine arguments based on dialect
 engine_kwargs = {
     "echo": False,
-    "future": True,
+    "pool_pre_ping": True,
+    "pool_recycle": 3600,
 }
 if not settings.DATABASE_URL.startswith("sqlite"):
     engine_kwargs["pool_size"] = 10
     engine_kwargs["max_overflow"] = 20
 
-# Create the async engine
-engine = create_async_engine(
+# Create the sync engine
+engine = create_engine(
     settings.DATABASE_URL,
     **engine_kwargs
 )
 
 # Create the session factory
-AsyncSessionFactory = async_sessionmaker(
-    engine,
+SessionLocal = sessionmaker(
     autocommit=False,
     autoflush=False,
-    expire_on_commit=False,
-    class_=AsyncSession,
+    bind=engine,
 )
 
-async def get_db_session() -> AsyncGenerator[AsyncSession, None]:
+def get_db() -> Generator[Session, None, None]:
     """
-    FastAPI dependency that provides an SQLAlchemy AsyncSession.
+    FastAPI dependency that provides an SQLAlchemy Session.
     Usage:
         @app.get("/")
-        async def endpoint(session: AsyncSession = Depends(get_db_session)):
+        def endpoint(session: Session = Depends(get_db)):
             ...
     """
-    async with AsyncSessionFactory() as session:
-        try:
-            yield session
-        except Exception:
-            await session.rollback()
-            raise
-        finally:
-            await session.close()
+    db = SessionLocal()
+    try:
+        yield db
+    except Exception:
+        db.rollback()
+        raise
+    finally:
+        db.close()

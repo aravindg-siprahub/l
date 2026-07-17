@@ -1,9 +1,9 @@
-import asyncio
+import sys
+import os
 from logging.config import fileConfig
 
+from sqlalchemy import engine_from_config
 from sqlalchemy import pool
-from sqlalchemy.engine import Connection
-from sqlalchemy.ext.asyncio import async_engine_from_config
 
 from alembic import context
 
@@ -16,24 +16,40 @@ config = context.config
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-import sys
-import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 from app.core.config import settings
 from app.core.db.base import Base
+
+# ── Model Discovery ───────────────────────────────────────────────────────────
+# IMPORTANT: Every SQLAlchemy model MUST be imported here before Base.metadata
+# is read by Alembic. Importing the module registers each model's Table object
+# with Base.metadata automatically via SQLAlchemy's declarative system.
+# Failing to import a model here will cause --autogenerate to silently skip it.
+#
+# Rule: whenever a new model is added to app/core/db/models.py, it is already
+# covered by the module-level import below. No further changes needed here.
+import app.core.db.models  # noqa: F401 — side-effect import: registers all models
+
+# Explicit named imports for static analysis tools and IDE support
+from app.core.db.models import (  # noqa: F401
+    DummyModel,
+    ContactMessage,
+    User,
+    RefreshToken,
+    Timesheet,
+    TimesheetEntry,
+    Invoice,
+)
 
 # add your model's MetaData object here
 # for 'autogenerate' support
 target_metadata = Base.metadata
 
 # Overwrite the sqlalchemy.url from alembic.ini with the one from our settings
-config.set_main_option("sqlalchemy.url", settings.DATABASE_URL)
-
-# other values from the config, defined by the needs of env.py,
-# can be acquired:
-# my_important_option = config.get_main_option("my_important_option")
-# ... etc.
+# We must escape % signs to %% because alembic uses configparser which interprets % as interpolation
+escaped_url = settings.DATABASE_URL.replace("%", "%%")
+config.set_main_option("sqlalchemy.url", escaped_url)
 
 
 def run_migrations_offline() -> None:
@@ -60,35 +76,22 @@ def run_migrations_offline() -> None:
         context.run_migrations()
 
 
-def do_run_migrations(connection: Connection) -> None:
-    context.configure(connection=connection, target_metadata=target_metadata)
+def run_migrations_online() -> None:
+    """Run migrations in 'online' mode."""
 
-    with context.begin_transaction():
-        context.run_migrations()
-
-
-async def run_async_migrations() -> None:
-    """In this scenario we need to create an Engine
-    and associate a connection with the context.
-
-    """
-
-    connectable = async_engine_from_config(
+    connectable = engine_from_config(
         config.get_section(config.config_ini_section, {}),
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
     )
 
-    async with connectable.connect() as connection:
-        await connection.run_sync(do_run_migrations)
+    with connectable.connect() as connection:
+        context.configure(
+            connection=connection, target_metadata=target_metadata
+        )
 
-    await connectable.dispose()
-
-
-def run_migrations_online() -> None:
-    """Run migrations in 'online' mode."""
-
-    asyncio.run(run_async_migrations())
+        with context.begin_transaction():
+            context.run_migrations()
 
 
 if context.is_offline_mode():
