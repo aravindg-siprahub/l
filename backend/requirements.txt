@@ -10,3 +10,4 @@ redis==5.0.7
 greenlet==3.0.3
 
 aiosqlite
+PyJWT==2.8.0

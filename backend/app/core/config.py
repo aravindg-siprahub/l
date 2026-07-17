@@ -12,6 +12,7 @@ class Settings(BaseSettings):
     SECRET_KEY: str = "SUPER_SECRET_KEY_CHANGE_ME_IN_PRODUCTION"
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
+    SUPABASE_JWT_SECRET: str = "your-supabase-jwt-secret"
 
     # Redis/Celery
     REDIS_URL: str = "redis://localhost:6379/0"
