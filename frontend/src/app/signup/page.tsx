@@ -9,7 +9,6 @@ import { PublicRoute } from '@/components/PublicRoute';
 export default function SignupPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [role, setRole] = useState('Candidate/Employee');
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -21,15 +20,9 @@ export default function SignupPage() {
     setMessage('');
 
     try {
-      const data = await authService.signUp({ email, password }, role);
+      const data = await authService.signUp({ email, password });
       
-      // If we immediately get a session, we can sync the profile directly.
       if (data?.session) {
-        // Sync profile to local backend DB.
-        // We can just fetch via standard fetch but apiClient requires the token from Supabase internally
-        // so it will be attached automatically since the session was just created.
-        const { apiClient } = await import('@/lib/api');
-        await apiClient('/auth/sync-profile', { method: 'POST' });
         setMessage('Account created successfully! Redirecting...');
         setTimeout(() => window.location.href = '/', 2000);
       } else {
@@ -73,18 +66,7 @@ export default function SignupPage() {
                 onChange={(e) => setPassword(e.target.value)}
               />
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Role</label>
-              <select
-                required
-                className="w-full px-3 py-2 mt-1 border rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 bg-white"
-                value={role}
-                onChange={(e) => setRole(e.target.value)}
-              >
-                <option value="Candidate/Employee">Candidate/Employee</option>
-                <option value="Client">Client</option>
-              </select>
-            </div>
+
           </div>
           
           <button

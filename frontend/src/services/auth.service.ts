@@ -2,13 +2,8 @@ import { supabase } from '@/lib/supabase';
 import { SignUpWithPasswordCredentials, SignInWithPasswordCredentials } from '@supabase/supabase-js';
 
 export const authService = {
-  async signUp(credentials: SignUpWithPasswordCredentials, role?: string) {
-    const { data, error } = await supabase.auth.signUp({
-      ...credentials,
-      options: {
-        data: role ? { role } : undefined,
-      }
-    });
+  async signUp(credentials: SignUpWithPasswordCredentials) {
+    const { data, error } = await supabase.auth.signUp(credentials);
     if (error) throw error;
     return data;
   },

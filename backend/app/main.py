@@ -34,24 +34,7 @@ def create_app() -> FastAPI:
     from app.api.endpoints.foundation import router as foundation_router
     api_router.include_router(foundation_router, prefix="/foundation", tags=["Foundation Validation"])
     
-    from app.api.endpoints.auth import router as auth_router
-    api_router.include_router(auth_router, prefix="/auth", tags=["Auth"])
-    
-    from app.api.endpoints.rbac_test import router as rbac_router
-    api_router.include_router(rbac_router, prefix="/rbac", tags=["RBAC Testing"])
-    
-    from app.api.endpoints.system import router as system_router
-    api_router.include_router(system_router, prefix="/system", tags=["System"])
-    
-    from app.api.endpoints.timesheets import router as timesheets_router
-    api_router.include_router(timesheets_router, prefix="/timesheets", tags=["Timesheets"])
-    
-    from app.api.endpoints.hr import router as hr_router
-    api_router.include_router(hr_router, prefix="/hr", tags=["HR"])
-    
-    from app.api.endpoints.invoices import router as invoices_router
-    api_router.include_router(invoices_router, prefix="/invoices", tags=["Invoices"])
-    
+
     # Mount router
     app.include_router(api_router)
 

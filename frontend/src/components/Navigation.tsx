@@ -2,12 +2,11 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { RoleGuard } from './RoleGuard';
 import { useAuth } from '@/providers/AuthProvider';
 
 export function Navigation() {
   const pathname = usePathname();
-  const { user, role, signOut } = useAuth();
+  const { user, signOut } = useAuth();
 
   const navItemClass = (path: string) => 
     `block px-4 py-2 rounded-md transition-colors ${pathname === path ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 font-semibold' : 'hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300'}`;
@@ -27,11 +26,6 @@ export function Navigation() {
           <span className="text-xs text-zinc-500 dark:text-zinc-400 truncate">
             {user?.email}
           </span>
-          {role && (
-            <span className="inline-block mt-2 px-2 py-1 bg-blue-100 dark:bg-blue-900/50 text-blue-800 dark:text-blue-200 text-xs font-medium rounded-full w-fit">
-              {role}
-            </span>
-          )}
         </div>
       </div>
 
@@ -40,51 +34,6 @@ export function Navigation() {
         <Link href="/" className={navItemClass('/')}>
           Dashboard
         </Link>
-
-        {/* System Administrator Links */}
-        <RoleGuard allowedRoles={['System Administrator']}>
-          <Link href="/system/dashboard" className={navItemClass('/system/dashboard')}>Dashboard</Link>
-          <Link href="/system/users" className={navItemClass('/system/users')}>Users</Link>
-          <Link href="/system/roles" className={navItemClass('/system/roles')}>Roles</Link>
-          <Link href="/system/workflows" className={navItemClass('/system/workflows')}>Workflows</Link>
-          <Link href="/system/audit" className={navItemClass('/system/audit')}>Audit Logs</Link>
-          <Link href="/system/settings" className={navItemClass('/system/settings')}>Settings</Link>
-        </RoleGuard>
-
-        {/* Candidate/Employee Links */}
-        <RoleGuard allowedRoles={['Candidate/Employee']}>
-          <Link href="/timesheets/my-timesheets" className={navItemClass('/timesheets/my-timesheets')}>My Timesheets</Link>
-          <Link href="/timesheets/submit" className={navItemClass('/timesheets/submit')}>Submit Timesheet</Link>
-          <Link href="/timesheets/status" className={navItemClass('/timesheets/status')}>Status</Link>
-        </RoleGuard>
-
-        {/* Client Manager Links */}
-        <RoleGuard allowedRoles={['Client Manager']}>
-          <Link href="/timesheets/approvals/pending" className={navItemClass('/timesheets/approvals/pending')}>Pending Approvals</Link>
-          <Link href="/timesheets/approvals/approved" className={navItemClass('/timesheets/approvals/approved')}>Approved</Link>
-          <Link href="/timesheets/approvals/rejected" className={navItemClass('/timesheets/approvals/rejected')}>Rejected</Link>
-        </RoleGuard>
-
-        {/* HR Team Links */}
-        <RoleGuard allowedRoles={['HR Team']}>
-          <Link href="/hr/validation/queue" className={navItemClass('/hr/validation/queue')}>Validation Queue</Link>
-          <Link href="/hr/validation/employee" className={navItemClass('/hr/validation/employee')}>Employee Validation</Link>
-          <Link href="/hr/history" className={navItemClass('/hr/history')}>History</Link>
-        </RoleGuard>
-
-        {/* Accounts Team Links */}
-        <RoleGuard allowedRoles={['Accounts Team']}>
-          <Link href="/invoices/queue" className={navItemClass('/invoices/queue')}>Invoice Queue</Link>
-          <Link href="/invoices/ai-generated" className={navItemClass('/invoices/ai-generated')}>AI Generated Invoices</Link>
-          <Link href="/invoices/billing-validation" className={navItemClass('/invoices/billing-validation')}>Billing Validation</Link>
-          <Link href="/invoices/sent" className={navItemClass('/invoices/sent')}>Sent Invoices</Link>
-        </RoleGuard>
-
-        {/* Client Links */}
-        <RoleGuard allowedRoles={['Client']}>
-          <Link href="/invoices/my-invoices" className={navItemClass('/invoices/my-invoices')}>My Invoices</Link>
-          <Link href="/invoices/status" className={navItemClass('/invoices/status')}>Invoice Status</Link>
-        </RoleGuard>
       </div>
 
       {/* Logout Section */}
