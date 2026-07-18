@@ -1,26 +1,29 @@
+'use client';
+
+import { useEffect, useState } from 'react';
 import DashboardSidebar, { NavItem } from '@/components/dashboard/DashboardSidebar';
+import { apiMe, UserOut } from '@/lib/auth';
+import { useRouter } from 'next/navigation';
 
 const roleNavItems: Record<string, NavItem[]> = {
   admin: [
     { label: 'Dashboard', href: '/dashboard/admin', icon: '🏠' },
     { label: 'Users', href: '/dashboard/admin/users', icon: '👥' },
-    { label: 'Candidates', href: '/dashboard/admin/candidates', icon: '🧑‍💼' },
-    { label: 'Timesheets', href: '/dashboard/admin/timesheets', icon: '🗓️' },
-    { label: 'Finance', href: '/dashboard/admin/finance', icon: '💰' },
-    { label: 'Invoices', href: '/dashboard/admin/invoices', icon: '📄' },
-    { label: 'Reports', href: '/dashboard/admin/reports', icon: '📊' },
     { label: 'Audit Logs', href: '/dashboard/admin/audit', icon: '📋' },
+    { label: 'Profile', href: '/dashboard/admin/profile', icon: '👤' },
   ],
   recruiter: [
     { label: 'Dashboard', href: '/dashboard/recruiter', icon: '🏠' },
     { label: 'Candidates', href: '/dashboard/recruiter/candidates', icon: '🧑‍💼' },
     { label: 'Timesheets', href: '/dashboard/recruiter/timesheets', icon: '🗓️' },
     { label: 'Reports', href: '/dashboard/recruiter/reports', icon: '📊' },
+    { label: 'Profile', href: '/dashboard/recruiter/profile', icon: '👤' },
   ],
   client_manager: [
     { label: 'Dashboard', href: '/dashboard/client-manager', icon: '🏠' },
     { label: 'Pending Approvals', href: '/dashboard/client-manager/timesheets', icon: '✅' },
     { label: 'Approval History', href: '/dashboard/client-manager/history', icon: '📋' },
+    { label: 'Profile', href: '/dashboard/client-manager/profile', icon: '👤' },
   ],
   finance_team: [
     { label: 'Dashboard', href: '/dashboard/finance', icon: '🏠' },
@@ -28,6 +31,7 @@ const roleNavItems: Record<string, NavItem[]> = {
     { label: 'Invoice Queue', href: '/dashboard/finance/invoices', icon: '📄' },
     { label: 'Billing Summary', href: '/dashboard/finance/billing', icon: '💰' },
     { label: 'Reports', href: '/dashboard/finance/reports', icon: '📊' },
+    { label: 'Profile', href: '/dashboard/finance/profile', icon: '👤' },
   ],
   candidate: [
     { label: 'Dashboard', href: '/dashboard/candidate', icon: '🏠' },
@@ -38,9 +42,44 @@ const roleNavItems: Record<string, NavItem[]> = {
 };
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const role = 'admin';
-  const userName = 'Platform User';
-  const navItems = roleNavItems[role] ?? roleNavItems.admin;
+  const [user, setUser] = useState<UserOut | null>(null);
+  const [loading, setLoading] = useState(true);
+  const router = useRouter();
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const token = localStorage.getItem('access_token') || '';
+        const u = await apiMe(token);
+        setUser(u);
+      } catch (err) {
+        router.push('/auth/login');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchUser();
+  }, [router]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-zinc-50">
+        <div className="flex flex-col items-center text-zinc-500">
+          <svg className="animate-spin h-8 w-8 text-indigo-500 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+          </svg>
+          Loading…
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) return null;
+
+  const role = user.role;
+  const userName = user.full_name;
+  const navItems = roleNavItems[role] ?? [];
 
   return (
     <div className="flex min-h-screen bg-zinc-50 font-sans">

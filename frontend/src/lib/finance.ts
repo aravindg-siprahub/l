@@ -6,16 +6,35 @@ export interface FinanceApprovePayload {
   tax_rate?: number;
   payment_terms?: string;
   notes?: string;
+  client_name: string;
+  billing_contact?: string;
+  billing_address?: string;
+  billing_email?: string;
 }
 
 export interface FinanceRejectPayload {
   reason: string;
 }
 
+export interface DashboardStats {
+  pending_validation: number;
+  draft_invoices: number;
+  ready_invoices: number;
+  sent_invoices: number;
+  paid_invoices: number;
+  total_revenue: number;
+  total_outstanding: number;
+}
+
 export const financeApi = {
   /** Finance queue: all client_approved timesheets */
   getPending: async (): Promise<Timesheet[]> => {
     return api.get<Timesheet[]>('/finance/pending');
+  },
+
+  /** Get a specific timesheet for finance review */
+  getTimesheetById: async (timesheetId: string): Promise<Timesheet> => {
+    return api.get<Timesheet>(`/finance/timesheets/${timesheetId}`);
   },
 
   /** Finance approves — triggers invoice generation. Returns generated Invoice. */
@@ -27,12 +46,20 @@ export const financeApi = {
   reject: async (timesheetId: string, reason: string): Promise<Timesheet> => {
     return api.post<Timesheet, FinanceRejectPayload>(`/finance/${timesheetId}/reject`, { reason });
   },
+
+  /** Fetch dashboard stats */
+  getDashboardStats: async (): Promise<DashboardStats> => {
+    return api.get<DashboardStats>('/finance/dashboard/stats');
+  },
 };
 
 export interface Invoice {
   id: string;
   invoice_number: string;
-  status: 'generated' | 'sent' | 'paid';
+  status: 'draft' | 'ready' | 'sent' | 'payment_pending' | 'paid';
+  currency?: string;
+  template_name?: string;
+  snapshot_data?: any;
   timesheet_id: string;
   candidate_id: string;
   generated_by_id: string;

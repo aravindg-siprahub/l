@@ -7,7 +7,7 @@ interface StatsCardProps {
   subtitle?: string;
   icon: string;
   trend?: { value: string; positive: boolean };
-  color?: 'indigo' | 'emerald' | 'amber' | 'red' | 'cyan';
+  color?: 'indigo' | 'emerald' | 'amber' | 'red' | 'cyan' | 'blue' | 'violet' | 'zinc';
 }
 
 const colorMap = {
@@ -16,6 +16,9 @@ const colorMap = {
   amber: 'bg-amber-50 text-amber-600 ring-amber-200',
   red: 'bg-red-50 text-red-600 ring-red-200',
   cyan: 'bg-cyan-50 text-cyan-600 ring-cyan-200',
+  blue: 'bg-blue-50 text-blue-600 ring-blue-200',
+  violet: 'bg-violet-50 text-violet-600 ring-violet-200',
+  zinc: 'bg-zinc-100 text-zinc-600 ring-zinc-200',
 };
 
 export default function StatsCard({ title, value, subtitle, icon, trend, color = 'indigo' }: StatsCardProps) {

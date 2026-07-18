@@ -19,6 +19,7 @@ export interface UserOut {
   is_active: boolean;
   is_verified: boolean;
   created_at: string;
+  last_login_at?: string;
 }
 
 async function apiFetch<T>(path: string, options: RequestInit): Promise<T> {

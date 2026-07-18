@@ -11,11 +11,25 @@ class InvoiceConfig(BaseModel):
     tax_rate: float = Field(default=0.0, ge=0, le=1, description="Tax rate as a decimal (e.g. 0.18 for 18%)")
     payment_terms: str = Field(default="Net 30", max_length=100)
     notes: str | None = None
+    client_name: str = Field(default="Test Client Organization", description="Client / Company Name")
+    billing_contact: str | None = None
+    billing_address: str | None = None
+    billing_email: str | None = None
 
 
 class FinanceApprove(InvoiceConfig):
     """Payload for Finance team approving a timesheet. Extends InvoiceConfig."""
     pass
+
+
+class InvoiceUpdate(BaseModel):
+    """Payload for updating an existing draft or ready invoice."""
+    client_name: str
+    billing_contact: str | None = None
+    billing_address: str | None = None
+    billing_email: str | None = None
+    payment_terms: str
+    notes: str | None = None
 
 
 class FinanceReject(BaseModel):
@@ -28,6 +42,7 @@ class InvoiceListItem(BaseModel):
     id: UUID
     invoice_number: str
     status: InvoiceStatus
+    currency: str
     candidate_id: UUID
     period_start_date: date
     period_end_date: date
@@ -46,6 +61,9 @@ class InvoiceOut(BaseModel):
     id: UUID
     invoice_number: str
     status: InvoiceStatus
+    currency: str
+    template_name: str
+    snapshot_data: dict | None
     timesheet_id: UUID
     candidate_id: UUID
     generated_by_id: UUID
@@ -69,3 +87,9 @@ class InvoiceOut(BaseModel):
     updated_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class InvoiceTransitionRequest(BaseModel):
+    """Payload for transitioning an invoice to a new state."""
+    target_status: InvoiceStatus
+    comments: str | None = Field(default=None, description="Optional audit log comments for the transition")

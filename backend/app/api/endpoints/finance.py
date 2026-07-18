@@ -11,6 +11,15 @@ from app.services.invoice_engine import InvoiceConfig
 
 router = APIRouter()
 
+@router.get("/dashboard/stats")
+def get_dashboard_stats(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Aggregated stats for the Finance dashboard."""
+    return finance_service.get_finance_dashboard_stats(db)
+
+
 
 @router.get("/pending", response_model=list[TimesheetOut])
 def get_finance_pending(
@@ -19,6 +28,16 @@ def get_finance_pending(
 ):
     """Finance queue: all client_approved timesheets awaiting Finance review."""
     return finance_service.get_finance_pending_timesheets(db)
+
+
+@router.get("/timesheets/{timesheet_id}", response_model=TimesheetOut)
+def get_finance_timesheet(
+    timesheet_id: uuid.UUID,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Retrieve a specific timesheet for finance review."""
+    return finance_service.get_timesheet_for_finance(db, timesheet_id)
 
 
 @router.post("/{timesheet_id}/approve", response_model=InvoiceOut, status_code=status.HTTP_201_CREATED)

@@ -17,6 +17,12 @@ class RegisterRequest(BaseModel):
     password: str = Field(..., min_length=8)
     role: UserRole = UserRole.candidate
 
+class UserUpdate(BaseModel):
+    full_name: str | None = None
+    role: UserRole | None = None
+    is_active: bool | None = None
+    password: str | None = None
+
 
 class LoginRequest(BaseModel):
     email: EmailStr
@@ -43,6 +49,7 @@ class UserOut(BaseModel):
     is_active: bool
     is_verified: bool
     created_at: datetime
+    last_login_at: datetime | None = None
 
     class Config:
         from_attributes = True

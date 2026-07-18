@@ -13,6 +13,56 @@ export default function InvoiceTemplate() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
+  // Editing state
+  const [isEditing, setIsEditing] = useState(false);
+  const [editForm, setEditForm] = useState({
+    client_name: '',
+    billing_contact: '',
+    billing_email: '',
+    billing_address: '',
+    payment_terms: '',
+    notes: ''
+  });
+  const [saving, setSaving] = useState(false);
+
+  const openEditModal = () => {
+    if (!invoice) return;
+    setEditForm({
+      client_name: invoice.snapshot_data?.client_name || '',
+      billing_contact: invoice.snapshot_data?.billing_contact || '',
+      billing_email: invoice.snapshot_data?.billing_email || '',
+      billing_address: invoice.snapshot_data?.billing_address || '',
+      payment_terms: invoice.payment_terms || '',
+      notes: invoice.notes || ''
+    });
+    setIsEditing(true);
+  };
+
+  const handleSaveBilling = async () => {
+    if (!invoice) return;
+    if (!editForm.client_name.trim()) {
+      alert('Client Name is required');
+      return;
+    }
+    setSaving(true);
+    try {
+      const updated = await invoicesApi.updateBilling(invoice.id, {
+        client_name: editForm.client_name,
+        billing_contact: editForm.billing_contact || undefined,
+        billing_email: editForm.billing_email || undefined,
+        billing_address: editForm.billing_address || undefined,
+        payment_terms: editForm.payment_terms,
+        notes: editForm.notes || undefined
+      });
+      setInvoice(updated);
+      setIsEditing(false);
+    } catch (e: any) {
+      alert(e.message || 'Failed to save billing information.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
   useEffect(() => {
     invoicesApi.getById(params.id as string)
       .then((inv) => {
@@ -40,6 +90,16 @@ export default function InvoiceTemplate() {
     .map(s => s.trim())
     .filter(Boolean);
 
+  const handleTransition = async (targetStatus: string) => {
+    if (!invoice) return;
+    try {
+      const updated = await invoicesApi.transition(invoice.id, targetStatus, `Transitioned to ${targetStatus}`);
+      setInvoice(updated);
+    } catch (err: any) {
+      alert(err.message || 'Failed to update status');
+    }
+  };
+
   return (
     <>
       {/* Print styles */}
@@ -59,15 +119,57 @@ export default function InvoiceTemplate() {
         >
           ← Back
         </button>
-        <button
-          onClick={() => window.print()}
-          className="inline-flex items-center gap-2 rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500"
-        >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-          </svg>
-          Download PDF
-        </button>
+        <div className="flex items-center gap-3">
+          {(invoice.status === 'draft' || invoice.status === 'ready') && (
+            <button
+              onClick={openEditModal}
+              className="inline-flex items-center rounded-md bg-white px-4 py-2 text-sm font-semibold text-zinc-700 shadow-sm ring-1 ring-inset ring-zinc-300 hover:bg-zinc-50"
+            >
+              Edit Billing
+            </button>
+          )}
+          {invoice.status === 'draft' && (
+            <button
+              onClick={() => handleTransition('ready')}
+              className="inline-flex items-center rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-500"
+            >
+              Mark as Ready
+            </button>
+          )}
+          {invoice.status === 'ready' && (
+            <button
+              onClick={() => handleTransition('sent')}
+              className="inline-flex items-center rounded-md bg-amber-600 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-500"
+            >
+              Mark as Sent
+            </button>
+          )}
+          {invoice.status === 'sent' && (
+            <button
+              onClick={() => handleTransition('payment_pending')}
+              className="inline-flex items-center rounded-md bg-orange-600 px-4 py-2 text-sm font-semibold text-white hover:bg-orange-500"
+            >
+              Mark Payment Pending
+            </button>
+          )}
+          {invoice.status === 'payment_pending' && (
+            <button
+              onClick={() => handleTransition('paid')}
+              className="inline-flex items-center rounded-md bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-500"
+            >
+              Mark as Paid
+            </button>
+          )}
+          <button
+            onClick={() => window.print()}
+            className="inline-flex items-center gap-2 rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+            </svg>
+            Download PDF
+          </button>
+        </div>
       </div>
 
       {/* ── INVOICE DOCUMENT ── */}
@@ -75,10 +177,6 @@ export default function InvoiceTemplate() {
 
         {/* ══ HEADER BAND ══ */}
         <div className="relative overflow-hidden">
-          {/* Top geometric shapes — mimic reference design */}
-          <div className="absolute top-0 right-0 w-56 h-20 bg-zinc-900 clip-diagonal z-0" />
-          <div className="absolute top-0 right-44 w-16 h-10 bg-indigo-600 clip-diagonal-sm z-0" />
-
           <div className="relative z-10 flex items-start justify-between px-10 pt-8 pb-6">
             {/* Logo */}
             <div className="flex items-center gap-3">
@@ -107,9 +205,10 @@ export default function InvoiceTemplate() {
         <div className="px-10 pb-6 pt-2 flex flex-wrap justify-between gap-6">
           <div>
             <p className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-1">Invoice To:</p>
-            <p className="text-sm font-bold text-zinc-900">Client / Project Manager</p>
-            <p className="text-sm text-zinc-500">your location here</p>
-            <p className="text-sm text-zinc-500">+123-456-7890</p>
+            <p className="text-sm font-bold text-zinc-900">{invoice.snapshot_data?.client_name || 'Client / Project Manager'}</p>
+            {invoice.snapshot_data?.billing_contact && <p className="text-sm text-zinc-600">{invoice.snapshot_data.billing_contact}</p>}
+            {invoice.snapshot_data?.billing_address && <p className="text-sm text-zinc-600 whitespace-pre-wrap">{invoice.snapshot_data.billing_address}</p>}
+            {invoice.snapshot_data?.billing_email && <p className="text-sm text-zinc-600">{invoice.snapshot_data.billing_email}</p>}
           </div>
           <div className="text-right">
             <p className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-1">Service Period:</p>
@@ -234,6 +333,54 @@ export default function InvoiceTemplate() {
         </div>
 
       </div>
+
+      {/* Edit Modal */}
+      {isEditing && (
+        <div className="relative z-50 no-print" role="dialog" aria-modal="true">
+          <div className="fixed inset-0 bg-zinc-500 bg-opacity-75"></div>
+          <div className="fixed inset-0 z-10 w-screen overflow-y-auto">
+            <div className="flex min-h-full items-end justify-center p-4 sm:items-center sm:p-0">
+              <div className="relative transform overflow-hidden rounded-lg bg-white px-4 pb-4 pt-5 text-left shadow-xl sm:my-8 sm:w-full sm:max-w-xl sm:p-6">
+                <h3 className="text-lg font-semibold text-zinc-900 mb-4">Edit Billing Information</h3>
+                
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-xs font-semibold text-zinc-700 uppercase tracking-wide mb-1">Client / Company Name *</label>
+                    <input type="text" value={editForm.client_name} onChange={e => setEditForm({...editForm, client_name: e.target.value})} className="block w-full rounded-md border-0 py-1.5 text-zinc-900 shadow-sm ring-1 ring-inset ring-zinc-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm" />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-semibold text-zinc-700 uppercase tracking-wide mb-1">Billing Contact</label>
+                      <input type="text" value={editForm.billing_contact} onChange={e => setEditForm({...editForm, billing_contact: e.target.value})} className="block w-full rounded-md border-0 py-1.5 text-zinc-900 shadow-sm ring-1 ring-inset ring-zinc-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm" />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-zinc-700 uppercase tracking-wide mb-1">Billing Email</label>
+                      <input type="email" value={editForm.billing_email} onChange={e => setEditForm({...editForm, billing_email: e.target.value})} className="block w-full rounded-md border-0 py-1.5 text-zinc-900 shadow-sm ring-1 ring-inset ring-zinc-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm" />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-zinc-700 uppercase tracking-wide mb-1">Billing Address</label>
+                    <textarea rows={2} value={editForm.billing_address} onChange={e => setEditForm({...editForm, billing_address: e.target.value})} className="block w-full rounded-md border-0 py-1.5 text-zinc-900 shadow-sm ring-1 ring-inset ring-zinc-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-zinc-700 uppercase tracking-wide mb-1">Payment Terms</label>
+                    <input type="text" value={editForm.payment_terms} onChange={e => setEditForm({...editForm, payment_terms: e.target.value})} className="block w-full rounded-md border-0 py-1.5 text-zinc-900 shadow-sm ring-1 ring-inset ring-zinc-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-zinc-700 uppercase tracking-wide mb-1">Finance Notes</label>
+                    <textarea rows={2} value={editForm.notes} onChange={e => setEditForm({...editForm, notes: e.target.value})} className="block w-full rounded-md border-0 py-1.5 text-zinc-900 shadow-sm ring-1 ring-inset ring-zinc-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm" />
+                  </div>
+                </div>
+
+                <div className="mt-6 flex justify-end gap-3">
+                  <button type="button" onClick={() => setIsEditing(false)} className="rounded-md bg-white px-4 py-2 text-sm font-semibold text-zinc-900 shadow-sm ring-1 ring-inset ring-zinc-300 hover:bg-zinc-50" disabled={saving}>Cancel</button>
+                  <button type="button" onClick={handleSaveBilling} className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500" disabled={saving}>{saving ? 'Saving...' : 'Save Changes'}</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

@@ -24,9 +24,15 @@ export default function FinanceTimesheetReview() {
   const [taxRate, setTaxRate] = useState('0');
   const [paymentTerms, setPaymentTerms] = useState('Net 30');
   const [financeNotes, setFinanceNotes] = useState('');
+  
+  // Billing form state
+  const [clientName, setClientName] = useState('Test Client Organization');
+  const [billingContact, setBillingContact] = useState('');
+  const [billingAddress, setBillingAddress] = useState('');
+  const [billingEmail, setBillingEmail] = useState('');
 
   useEffect(() => {
-    timesheetsApi.getById(params.id as string)
+    financeApi.getTimesheetById(params.id as string)
       .then(setTimesheet)
       .catch((e: any) => setError(e.message || 'Failed to load timesheet.'))
       .finally(() => setLoading(false));
@@ -40,6 +46,11 @@ export default function FinanceTimesheetReview() {
 
   const handleApprove = async () => {
     if (!timesheet) return;
+    if (!clientName.trim()) {
+      setError('Client / Company Name is required.');
+      return;
+    }
+    
     try {
       setProcessing(true);
       setError('');
@@ -48,6 +59,10 @@ export default function FinanceTimesheetReview() {
         tax_rate: tax,
         payment_terms: paymentTerms,
         notes: financeNotes || undefined,
+        client_name: clientName,
+        billing_contact: billingContact || undefined,
+        billing_address: billingAddress || undefined,
+        billing_email: billingEmail || undefined,
       };
       const invoice: Invoice = await financeApi.approve(timesheet.id, payload);
       router.push(`/dashboard/finance/invoices/${invoice.id}`);
@@ -209,6 +224,52 @@ export default function FinanceTimesheetReview() {
                   placeholder="Internal notes..."
                 />
               </div>
+
+              <div className="pt-4 border-t border-zinc-200">
+                <h4 className="text-xs font-semibold text-zinc-900 mb-3">Billing Information</h4>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-xs font-semibold text-zinc-700 uppercase tracking-wide mb-1">Client / Company Name *</label>
+                    <input
+                      type="text"
+                      value={clientName}
+                      onChange={e => setClientName(e.target.value)}
+                      className="block w-full rounded-md border-0 py-1.5 text-zinc-900 shadow-sm ring-1 ring-inset ring-zinc-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm"
+                      placeholder="e.g. Acme Corp"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-zinc-700 uppercase tracking-wide mb-1">Billing Contact (optional)</label>
+                    <input
+                      type="text"
+                      value={billingContact}
+                      onChange={e => setBillingContact(e.target.value)}
+                      className="block w-full rounded-md border-0 py-1.5 text-zinc-900 shadow-sm ring-1 ring-inset ring-zinc-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm"
+                      placeholder="e.g. Jane Doe"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-zinc-700 uppercase tracking-wide mb-1">Billing Email (optional)</label>
+                    <input
+                      type="email"
+                      value={billingEmail}
+                      onChange={e => setBillingEmail(e.target.value)}
+                      className="block w-full rounded-md border-0 py-1.5 text-zinc-900 shadow-sm ring-1 ring-inset ring-zinc-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm"
+                      placeholder="e.g. billing@acme.com"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-zinc-700 uppercase tracking-wide mb-1">Billing Address (optional)</label>
+                    <textarea
+                      rows={2}
+                      value={billingAddress}
+                      onChange={e => setBillingAddress(e.target.value)}
+                      className="block w-full rounded-md border-0 py-1.5 text-zinc-900 shadow-sm ring-1 ring-inset ring-zinc-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm"
+                      placeholder="e.g. 123 Business Rd..."
+                    />
+                  </div>
+                </div>
+              </div>
             </div>
 
             {/* Live Preview */}
@@ -216,18 +277,28 @@ export default function FinanceTimesheetReview() {
               <div className="px-4 py-2 bg-zinc-200">
                 <p className="text-xs font-semibold text-zinc-600 uppercase tracking-wide">Invoice Preview</p>
               </div>
-              <div className="p-4 space-y-2 text-sm">
-                <div className="flex justify-between text-zinc-600">
-                  <span>{timesheet.total_hours}h × ${rate.toFixed(2)}</span>
-                  <span className="font-medium text-zinc-900">${subtotal.toFixed(2)}</span>
+              <div className="p-4 space-y-4 text-sm">
+                <div>
+                  <p className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-1">Billed To:</p>
+                  <p className="font-bold text-zinc-900">{clientName || '—'}</p>
+                  {billingContact && <p className="text-zinc-600 text-xs mt-0.5">{billingContact}</p>}
+                  {billingAddress && <p className="text-zinc-600 text-xs mt-0.5 whitespace-pre-wrap">{billingAddress}</p>}
+                  {billingEmail && <p className="text-zinc-600 text-xs mt-0.5">{billingEmail}</p>}
                 </div>
-                <div className="flex justify-between text-zinc-600">
-                  <span>Tax ({(tax * 100).toFixed(0)}%)</span>
-                  <span className="font-medium text-zinc-900">${taxAmt.toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between border-t border-zinc-300 pt-2 font-bold text-zinc-900">
-                  <span>Total Due</span>
-                  <span className="text-indigo-600">${total.toFixed(2)}</span>
+                
+                <div className="pt-3 border-t border-zinc-200 space-y-2">
+                  <div className="flex justify-between text-zinc-600">
+                    <span>{timesheet.total_hours}h × ${rate.toFixed(2)}</span>
+                    <span className="font-medium text-zinc-900">${subtotal.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between text-zinc-600">
+                    <span>Tax ({(tax * 100).toFixed(0)}%)</span>
+                    <span className="font-medium text-zinc-900">${taxAmt.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between border-t border-zinc-300 pt-2 font-bold text-zinc-900">
+                    <span>Total Due</span>
+                    <span className="text-indigo-600">${total.toFixed(2)}</span>
+                  </div>
                 </div>
               </div>
             </div>

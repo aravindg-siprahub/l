@@ -31,7 +31,7 @@ def create_app() -> FastAPI:
     # Configure CORS for Next.js frontend
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"],
+        allow_origins=settings.parsed_cors_origins,
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
@@ -62,6 +62,8 @@ def create_app() -> FastAPI:
             content={"error": "InfrastructureError", "message": "Service unavailable", "details": exc.details},
         )
 
+
+
     # Global Health Check
     @app.get("/health", tags=["Health"])
     async def health_check():
@@ -77,6 +79,7 @@ def create_app() -> FastAPI:
     from app.api.endpoints.timesheets import router as timesheets_router
     from app.api.endpoints.finance import router as finance_router
     from app.api.endpoints.invoices import router as invoices_router
+    from app.api.endpoints.admin import router as admin_router
 
     api_router.include_router(foundation_router, prefix="/foundation", tags=["Foundation Validation"])
     api_router.include_router(public_router, prefix="/public", tags=["Public"])
@@ -84,6 +87,7 @@ def create_app() -> FastAPI:
     api_router.include_router(timesheets_router, prefix="/timesheets", tags=["Timesheets"])
     api_router.include_router(finance_router, prefix="/finance", tags=["Finance"])
     api_router.include_router(invoices_router, prefix="/invoices", tags=["Invoices"])
+    api_router.include_router(admin_router, prefix="/admin", tags=["Admin"])
 
     # Mount router
     app.include_router(api_router)

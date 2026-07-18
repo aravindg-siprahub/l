@@ -22,7 +22,7 @@ function isExpired(payload: Record<string, unknown>): boolean {
   return Date.now() / 1000 > exp;
 }
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const token = request.cookies.get('access_token')?.value;
 
@@ -47,6 +47,8 @@ export function middleware(request: NextRequest) {
 
   return NextResponse.next();
 }
+
+export default proxy;
 
 export const config = {
   matcher: ['/dashboard/:path*', '/login', '/register'],

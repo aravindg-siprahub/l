@@ -2,11 +2,12 @@
 Auth API endpoints: register, login, refresh, logout, me.
 """
 from fastapi import APIRouter, Depends, status, Response
+from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 from app.infrastructure.database.session import get_db
 from app.api.dependencies import get_current_user
-from app.schemas.auth import RegisterRequest, LoginRequest, RefreshRequest, TokenResponse, UserOut
+from app.schemas.auth import RegisterRequest, LoginRequest, RefreshRequest, TokenResponse, UserOut, UserUpdate
 from app.services import auth_service
 from app.core.db.models import User
 
@@ -53,6 +54,46 @@ def logout(
 def me(current_user: User = Depends(get_current_user)):
     """Return the profile of the currently authenticated user."""
     return current_user
+
+
+@router.patch("/me", response_model=UserOut)
+def update_me(
+    payload: UserUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Update the authenticated user's own full name."""
+    from app.core.security import get_password_hash
+    if payload.full_name is not None:
+        current_user.full_name = payload.full_name
+    if payload.password is not None:
+        current_user.hashed_password = get_password_hash(payload.password)
+    db.commit()
+    db.refresh(current_user)
+    return current_user
+
+
+class ChangePasswordRequest(BaseModel):
+    current_password: str
+    new_password: str = Field(..., min_length=8)
+
+
+@router.post("/change-password", status_code=status.HTTP_204_NO_CONTENT)
+def change_password(
+    payload: ChangePasswordRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Change the current user's password after verifying the old one."""
+    from app.core.security import verify_password, get_password_hash
+    if not verify_password(payload.current_password, current_user.hashed_password):
+        from fastapi import HTTPException
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Current password is incorrect.",
+        )
+    current_user.hashed_password = get_password_hash(payload.new_password)
+    db.commit()
 
 def _set_auth_cookies(response: Response, access_token: str, refresh_token: str):
     """Helper to set secure, HttpOnly auth cookies."""

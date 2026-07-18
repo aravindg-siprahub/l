@@ -39,5 +39,6 @@ export const api = {
   get: <T>(path: string) => fetchWithAuth(path, { method: 'GET' }) as Promise<T>,
   post: <T, D>(path: string, data: D) => fetchWithAuth(path, { method: 'POST', body: JSON.stringify(data) }) as Promise<T>,
   put: <T, D>(path: string, data: D) => fetchWithAuth(path, { method: 'PUT', body: JSON.stringify(data) }) as Promise<T>,
+  patch: <T, D>(path: string, data: D) => fetchWithAuth(path, { method: 'PATCH', body: JSON.stringify(data) }) as Promise<T>,
   delete: <T>(path: string) => fetchWithAuth(path, { method: 'DELETE' }) as Promise<T>,
 };

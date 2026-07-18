@@ -56,3 +56,20 @@ def get_current_user(
             detail="This account has been deactivated.",
         )
     return user
+
+
+def require_client_manager(
+    current_user: User = Depends(get_current_user),
+) -> User:
+    """
+    FastAPI dependency — enforce the client_manager role.
+    Raises HTTP 403 if the authenticated user is not a client manager.
+    Follows the same pattern as require_admin in admin.py.
+    """
+    from app.core.db.models import UserRole
+    if current_user.role != UserRole.client_manager:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Client Manager access is required to perform this action.",
+        )
+    return current_user

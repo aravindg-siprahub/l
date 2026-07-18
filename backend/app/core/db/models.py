@@ -2,9 +2,9 @@ import enum
 import uuid
 from datetime import datetime, timezone
 
-from sqlalchemy import Column, String, Text, Boolean, Enum, DateTime, ForeignKey, Float
+from sqlalchemy import Column, String, Text, Boolean, Enum, DateTime, ForeignKey, Float, Integer
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy.dialects.postgresql import UUID as PGUUID
+from sqlalchemy.dialects.postgresql import UUID as PGUUID, JSONB
 from app.core.db.base import Base, UUIDPrimaryKeyMixin, TimestampMixin
 
 
@@ -100,6 +100,17 @@ class Timesheet(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     reviewed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     approval_comments: Mapped[str | None] = mapped_column(Text, nullable=True)
 
+    # Sharing fields — Phase 1 (Candidate → Manager)
+    # A timesheet is "shared" when shared_at IS NOT NULL.
+    # Status remains 'submitted' so the existing approval workflow is unaffected.
+    manager_email: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    manager_name: Mapped[str | None]  = mapped_column(String(255), nullable=True)
+    shared_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    # Submission version tracking — incremented on each candidate resubmission
+    # Version 1 = initial submission. Existing rows default to 1.
+    current_version: Mapped[int] = mapped_column(Integer, nullable=False, default=1, server_default='1')
+
     candidate: Mapped["User"] = relationship("User", foreign_keys=[candidate_id])
     reviewed_by: Mapped["User"] = relationship("User", foreign_keys=[reviewed_by_id])
     invoice: Mapped["Invoice | None"] = relationship("Invoice", back_populates="timesheet", uselist=False)
@@ -116,14 +127,61 @@ class TimesheetEntry(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     date: Mapped[datetime] = mapped_column(DateTime, nullable=False)
     hours_worked: Mapped[float] = mapped_column(nullable=False)
     task_description: Mapped[str] = mapped_column(String(500), nullable=False)
+    # Version this entry belongs to — allows preserving prior submission versions.
+    # Version 1 = original submission. Existing rows default to 1 via server_default.
+    version: Mapped[int] = mapped_column(Integer, nullable=False, default=1, server_default='1')
 
     timesheet: Mapped["Timesheet"] = relationship("Timesheet", back_populates="entries")
 
 
+class TimesheetAuditAction(str, enum.Enum):
+    """Actions that can be recorded in the timesheet audit log."""
+    submitted = "submitted"
+    resubmitted = "resubmitted"
+    shared = "shared"
+    client_approved = "client_approved"
+    client_rejected = "client_rejected"
+    finance_approved = "finance_approved"
+    finance_rejected = "finance_rejected"
+
+
+class TimesheetAuditLog(Base, UUIDPrimaryKeyMixin):
+    """
+    Immutable, append-only event log for all timesheet state changes.
+
+    Design rules:
+      - Never updated, never soft-deleted.
+      - Written inside the same DB transaction as the status change.
+      - actor_role is denormalized at write time for fast display without extra joins.
+      - comments stores the approval/rejection reason for that specific action.
+    """
+    timesheet_id: Mapped[uuid.UUID] = mapped_column(
+        PGUUID(as_uuid=True), ForeignKey("timesheet.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    actor_id: Mapped[uuid.UUID | None] = mapped_column(
+        PGUUID(as_uuid=True), ForeignKey("user.id", ondelete="SET NULL"), nullable=True, index=True
+    )
+    action: Mapped[TimesheetAuditAction] = mapped_column(
+        Enum(TimesheetAuditAction, name="timesheetauditaction"), nullable=False
+    )
+    actor_role: Mapped[str] = mapped_column(String(50), nullable=False)  # denormalized at write time
+    comments: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+        nullable=False,
+    )
+
+    timesheet: Mapped["Timesheet"] = relationship("Timesheet", foreign_keys=[timesheet_id])
+    actor: Mapped["User | None"] = relationship("User", foreign_keys=[actor_id])
+
+
 class InvoiceStatus(str, enum.Enum):
     """Lifecycle status of a generated invoice."""
-    generated = "generated"
+    draft = "draft"
+    ready = "ready"
     sent = "sent"
+    payment_pending = "payment_pending"
     paid = "paid"
 
 
@@ -141,8 +199,11 @@ class Invoice(Base, UUIDPrimaryKeyMixin, TimestampMixin):
 
     invoice_number: Mapped[str] = mapped_column(String(50), nullable=False, unique=True, index=True)
     status: Mapped[InvoiceStatus] = mapped_column(
-        Enum(InvoiceStatus, name="invoicestatus"), nullable=False, default=InvoiceStatus.generated
+        Enum(InvoiceStatus, name="invoicestatus"), nullable=False, default=InvoiceStatus.draft
     )
+    currency: Mapped[str] = mapped_column(String(3), nullable=False, default="USD", server_default="USD")
+    template_name: Mapped[str] = mapped_column(String(50), nullable=False, default="default", server_default="default")
+    snapshot_data: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
 
     # Period (denormalized from timesheet for fast display)
     period_start_date: Mapped[datetime] = mapped_column(DateTime, nullable=False)
@@ -169,3 +230,37 @@ class Invoice(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     timesheet: Mapped["Timesheet"] = relationship("Timesheet", back_populates="invoice")
     candidate: Mapped["User"] = relationship("User", foreign_keys=[candidate_id])
     generated_by: Mapped["User"] = relationship("User", foreign_keys=[generated_by_id])
+
+
+class InvoiceAuditAction(str, enum.Enum):
+    """Actions that can be recorded in the invoice audit log."""
+    generated = "generated"
+    updated = "updated"
+    status_changed = "status_changed"
+    sent = "sent"
+    payment_received = "payment_received"
+
+
+class InvoiceAuditLog(Base, UUIDPrimaryKeyMixin):
+    """
+    Immutable, append-only event log for all invoice state changes.
+    """
+    invoice_id: Mapped[uuid.UUID] = mapped_column(
+        PGUUID(as_uuid=True), ForeignKey("invoice.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    actor_id: Mapped[uuid.UUID | None] = mapped_column(
+        PGUUID(as_uuid=True), ForeignKey("user.id", ondelete="SET NULL"), nullable=True, index=True
+    )
+    action: Mapped[InvoiceAuditAction] = mapped_column(
+        Enum(InvoiceAuditAction, name="invoiceauditaction"), nullable=False
+    )
+    actor_role: Mapped[str] = mapped_column(String(50), nullable=False)
+    comments: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+        nullable=False,
+    )
+
+    invoice: Mapped["Invoice"] = relationship("Invoice", foreign_keys=[invoice_id])
+    actor: Mapped["User | None"] = relationship("User", foreign_keys=[actor_id])
