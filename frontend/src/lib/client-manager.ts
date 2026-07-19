@@ -27,6 +27,7 @@ export interface AuditLogEntry {
   actor_role: string;
   actor_name: string | null;
   comments: string | null;
+  version?: number;
   created_at: string;
 }
 
