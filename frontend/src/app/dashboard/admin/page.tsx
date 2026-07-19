@@ -7,11 +7,12 @@ import ActivityFeed, { ActivityItem } from '@/components/dashboard/ActivityFeed'
 import QuickActions, { QuickAction } from '@/components/dashboard/QuickActions';
 import { adminApi } from '@/lib/admin';
 import { UserOut } from '@/lib/auth';
+import { Users, User, Briefcase, Landmark, UserPlus, FileText, LogIn } from 'lucide-react';
 
 const actions: QuickAction[] = [
-  { label: 'Add User', icon: '➕', href: '/dashboard/admin/users', color: 'indigo', description: 'Create account' },
-  { label: 'Manage Users', icon: '👥', href: '/dashboard/admin/users', color: 'cyan', description: 'Manage access' },
-  { label: 'Audit Logs', icon: '📋', href: '/dashboard/admin/audit', color: 'zinc', description: 'Activity trail' },
+  { label: 'Add User', icon: <UserPlus size={18} />, href: '/dashboard/admin/users', color: 'indigo', description: 'Create account' },
+  { label: 'Manage Users', icon: <Users size={18} />, href: '/dashboard/admin/users', color: 'cyan', description: 'Manage access' },
+  { label: 'Audit Logs', icon: <FileText size={18} />, href: '/dashboard/admin/audit', color: 'zinc', description: 'Activity trail' },
 ];
 
 export default function AdminDashboard() {
@@ -35,10 +36,10 @@ export default function AdminDashboard() {
   const stats = useMemo(() => {
     const activeUsers = users.filter(u => u.is_active);
     return [
-      { title: 'Total Users', value: users.length.toString(), icon: '👥', color: 'indigo' as const },
-      { title: 'Candidates', value: users.filter(u => u.role === 'candidate').length.toString(), icon: '🧑‍💼', color: 'emerald' as const },
-      { title: 'Client Managers', value: users.filter(u => u.role === 'client_manager').length.toString(), icon: '👔', color: 'amber' as const },
-      { title: 'Finance Users', value: users.filter(u => u.role === 'finance_team').length.toString(), icon: '🏦', color: 'cyan' as const },
+      { title: 'Total Users', value: users.length.toString(), icon: <Users size={20} />, color: 'indigo' as const },
+      { title: 'Candidates', value: users.filter(u => u.role === 'candidate').length.toString(), icon: <User size={20} />, color: 'emerald' as const },
+      { title: 'Client Managers', value: users.filter(u => u.role === 'client_manager').length.toString(), icon: <Briefcase size={20} />, color: 'amber' as const },
+      { title: 'Finance Users', value: users.filter(u => u.role === 'finance_team').length.toString(), icon: <Landmark size={20} />, color: 'cyan' as const },
     ];
   }, [users]);
 
@@ -56,7 +57,7 @@ export default function AdminDashboard() {
             description: `Role: ${user.role}`, 
             timeAgo: '', 
             badgeLabel: 'New User',
-            icon: '➕', 
+            icon: <UserPlus size={16} />, 
             color: 'emerald',
             href: '#'
           }
@@ -73,7 +74,7 @@ export default function AdminDashboard() {
             description: '', 
             timeAgo: '', 
             badgeLabel: 'Login',
-            icon: '🔑', 
+            icon: <LogIn size={16} />, 
             color: 'indigo',
             href: '#'
           }
@@ -102,14 +103,14 @@ export default function AdminDashboard() {
       ) : (
         <>
           {/* Stats */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {stats.map(s => <StatsCard key={s.title} {...s} />)}
           </div>
 
           {/* Main grid */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2">
-              <ActivityFeed items={activityFeed} />
+              <ActivityFeed items={activityFeed} scrollable={true} />
             </div>
             <div>
               <QuickActions actions={actions} />

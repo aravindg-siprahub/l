@@ -26,9 +26,10 @@ const colorStyles = {
 interface ActivityFeedProps {
   items: ActivityItem[];
   title?: string;
+  scrollable?: boolean;
 }
 
-export default function ActivityFeed({ items, title = 'Recent Activity' }: ActivityFeedProps) {
+export default function ActivityFeed({ items, title = 'Recent Activity', scrollable = false }: ActivityFeedProps) {
   return (
     <div className="bg-white rounded-2xl border border-zinc-200 p-6 shadow-sm">
       <div className="flex items-center justify-between mb-8">
@@ -41,9 +42,9 @@ export default function ActivityFeed({ items, title = 'Recent Activity' }: Activ
       {items.length === 0 ? (
         <p className="text-sm text-zinc-400 text-center py-8">No recent activity</p>
       ) : (
-        <div className="relative pl-[1.125rem]">
-          {/* Vertical connecting line */}
-          <div className="absolute top-4 bottom-4 left-[1.125rem] w-px bg-zinc-200 -z-10" />
+        <div className={`relative ${scrollable ? 'max-h-[400px] overflow-y-auto pr-4 -mr-2 scrollbar-thin scrollbar-thumb-zinc-200 scrollbar-track-transparent' : ''}`}>
+          {/* Vertical connecting line through the center of icons */}
+          <div className="absolute top-[22px] bottom-[22px] left-[21.5px] w-px bg-zinc-200" />
 
           <ul className="space-y-6">
             {items.map((item) => {
@@ -51,38 +52,39 @@ export default function ActivityFeed({ items, title = 'Recent Activity' }: Activ
               
               return (
                 <li key={item.id} className="relative group">
-                  <a href={item.href} className="flex items-start gap-4">
-                    {/* Small inner dot + Large circle icon */}
-                    <div className="relative shrink-0 flex items-center justify-center">
-                      <div className={`absolute -left-5 h-2 w-2 rounded-full ring-4 ring-white ${styles.dot}`} />
-                      <div className={`flex h-11 w-11 items-center justify-center rounded-full ${styles.bg} ${styles.icon}`}>
-                        {item.icon}
-                      </div>
+                  <a href={item.href} className="flex items-start gap-4 p-2 -m-2 rounded-xl hover:bg-zinc-50/50 transition-colors">
+                    {/* Large circle icon with white ring to cover the line behind it */}
+                    <div className={`relative z-10 flex h-11 w-11 shrink-0 items-center justify-center rounded-full ring-4 ring-white ${styles.bg} ${styles.icon}`}>
+                      {item.icon}
                     </div>
                     
                     {/* Content */}
                     <div className="flex-1 flex flex-col justify-center min-h-[44px] gap-0.5">
-                      <h4 className="text-[13px] font-bold text-zinc-900 leading-tight">
+                      <h4 className="text-[13px] font-bold text-zinc-900 leading-tight group-hover:text-indigo-600 transition-colors">
                         {item.title}
                       </h4>
                       <p className="text-[12px] text-zinc-500">
                         {item.subtitle}
                       </p>
-                      <p className="text-[11px] text-zinc-400">
-                        {item.description}
-                      </p>
+                      {item.description && (
+                        <p className="text-[11px] text-zinc-400">
+                          {item.description}
+                        </p>
+                      )}
                     </div>
                     
-                    {/* Right Side: Badge, Time, Link */}
-                    <div className="flex items-center gap-4 shrink-0 mt-1">
-                      <span className={`px-2.5 py-1 rounded-md text-[11px] font-bold tracking-wide ${styles.badge}`}>
-                        {item.badgeLabel}
-                      </span>
-                      <time className="text-[11px] font-medium text-zinc-400 w-12 text-right">
+                    {/* Right Side: Badge, Time */}
+                    <div className="flex items-center justify-end gap-3 shrink-0 h-[44px]">
+                      {item.badgeLabel && (
+                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide ${styles.badge}`}>
+                          {item.badgeLabel}
+                        </span>
+                      )}
+                      <time className="text-[11px] font-medium text-zinc-400 whitespace-nowrap text-right min-w-[70px]">
                         {item.timeAgo}
                       </time>
-                      <div className="flex items-center text-[12px] font-bold text-indigo-600 opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all">
-                        View <ChevronRight size={14} />
+                      <div className="hidden sm:flex items-center text-[12px] font-bold text-indigo-600 opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all">
+                        <ChevronRight size={14} />
                       </div>
                     </div>
                   </a>
