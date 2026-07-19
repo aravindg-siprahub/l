@@ -336,13 +336,12 @@ def get_timesheet_for_client_review(
 
 def get_client_manager_stats(db: Session, manager_email: str) -> dict:
     """
-    Return live dashboard counts for a client manager.
-    Uses three targeted aggregation queries — no N+1.
+    Returns live counts for the client manager dashboard.
     """
-    from datetime import date
-    from sqlalchemy import extract
+    from datetime import datetime, timezone
 
     now = datetime.now(timezone.utc)
+    start_of_month = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
 
     pending_count = db.scalar(
         select(func.count(Timesheet.id))
@@ -354,24 +353,100 @@ def get_client_manager_stats(db: Session, manager_email: str) -> dict:
         select(func.count(Timesheet.id))
         .where(Timesheet.manager_email == manager_email)
         .where(Timesheet.status == TimesheetStatus.client_approved)
-        .where(extract("year", Timesheet.reviewed_at) == now.year)
-        .where(extract("month", Timesheet.reviewed_at) == now.month)
+        .where(Timesheet.reviewed_at >= start_of_month)
     ) or 0
 
     rejected_this_month = db.scalar(
         select(func.count(Timesheet.id))
         .where(Timesheet.manager_email == manager_email)
         .where(Timesheet.status == TimesheetStatus.client_rejected)
-        .where(extract("year", Timesheet.reviewed_at) == now.year)
-        .where(extract("month", Timesheet.reviewed_at) == now.month)
+        .where(Timesheet.reviewed_at >= start_of_month)
     ) or 0
+
+    total_timesheets = db.scalar(
+        select(func.count(Timesheet.id))
+        .where(Timesheet.manager_email == manager_email)
+    ) or 0
+    
+    # Calculate average approval time (difference between reviewed_at and submitted_at)
+    avg_approval_time_hours = "0h"
+    
+    approved_timesheets = db.scalars(
+        select(Timesheet)
+        .where(Timesheet.manager_email == manager_email)
+        .where(Timesheet.status.in_([TimesheetStatus.client_approved, TimesheetStatus.finance_approved, TimesheetStatus.finance_rejected]))
+        .where(Timesheet.reviewed_at.isnot(None))
+        .where(Timesheet.submitted_at.isnot(None))
+    ).all()
+    
+    if approved_timesheets:
+        total_seconds = sum(
+            (ts.reviewed_at - ts.submitted_at).total_seconds()
+            for ts in approved_timesheets
+        )
+        avg_hours = int(total_seconds / len(approved_timesheets) / 3600)
+        avg_approval_time_hours = f"{avg_hours}h"
 
     return {
         "pending": pending_count,
         "approved_this_month": approved_this_month,
         "rejected_this_month": rejected_this_month,
+        "avg_approval_time_hours": avg_approval_time_hours,
+        "total_timesheets": total_timesheets,
     }
 
+def get_client_manager_trend(db: Session, manager_email: str) -> dict:
+    from datetime import timedelta
+    now = datetime.now(timezone.utc)
+    seven_days_ago = now - timedelta(days=7)
+    
+    # Fetch all timesheets updated in the last 7 days for this manager
+    # We use shared_at and reviewed_at as the primary interaction timestamps
+    stmt = (
+        select(Timesheet)
+        .where(Timesheet.manager_email == manager_email)
+        .where(
+            (Timesheet.shared_at >= seven_days_ago) |
+            (Timesheet.reviewed_at >= seven_days_ago)
+        )
+    )
+    timesheets = db.scalars(stmt).all()
+    
+    # Initialize the last 7 days array
+    trend_map = {}
+    for i in range(7):
+        d = now - timedelta(days=6 - i)
+        date_str = d.strftime("%b ") + str(d.day)
+        trend_map[date_str] = {"approved": 0, "shared": 0, "rejected": 0}
+        
+    for ts in timesheets:
+        if ts.status == TimesheetStatus.submitted and ts.shared_at:
+            if ts.shared_at >= seven_days_ago:
+                d_str = ts.shared_at.strftime("%b ") + str(ts.shared_at.day)
+                if d_str in trend_map:
+                    trend_map[d_str]["shared"] += 1
+        elif ts.status == TimesheetStatus.client_approved and ts.reviewed_at:
+            if ts.reviewed_at >= seven_days_ago:
+                d_str = ts.reviewed_at.strftime("%b ") + str(ts.reviewed_at.day)
+                if d_str in trend_map:
+                    trend_map[d_str]["approved"] += 1
+        elif ts.status == TimesheetStatus.client_rejected and ts.reviewed_at:
+            if ts.reviewed_at >= seven_days_ago:
+                d_str = ts.reviewed_at.strftime("%b ") + str(ts.reviewed_at.day)
+                if d_str in trend_map:
+                    trend_map[d_str]["rejected"] += 1
+                    
+    # Format into list
+    result = []
+    for d_str, counts in trend_map.items():
+        result.append({
+            "date": d_str,
+            "approved": counts["approved"],
+            "shared": counts["shared"],
+            "rejected": counts["rejected"]
+        })
+        
+    return {"data": result}
 
 def get_timesheet_audit_log(
     db: Session,

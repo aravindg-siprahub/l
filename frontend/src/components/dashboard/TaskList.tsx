@@ -11,9 +11,9 @@ export interface Task {
 }
 
 const priorityStyle = {
-  high: 'bg-red-50 text-red-700 border-red-200',
-  medium: 'bg-amber-50 text-amber-700 border-amber-200',
-  low: 'bg-zinc-50 text-zinc-600 border-zinc-200',
+  high: 'bg-transparent',
+  medium: 'bg-transparent',
+  low: 'bg-transparent',
 };
 
 const priorityDot = {
@@ -30,36 +30,47 @@ interface TaskListProps {
 export default function TaskList({ tasks, title = 'Pending Tasks' }: TaskListProps) {
   return (
     <div className="bg-white rounded-2xl border border-zinc-200 p-6 shadow-sm">
-      <div className="flex items-center justify-between mb-5">
-        <h3 className="text-base font-semibold text-zinc-900">{title}</h3>
-        <span className="rounded-full bg-indigo-100 px-2.5 py-0.5 text-xs font-medium text-indigo-700">
-          {tasks.length}
-        </span>
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center gap-2">
+          <h3 className="text-sm font-bold text-zinc-900">{title}</h3>
+          <span className="flex h-5 w-5 items-center justify-center rounded-full bg-indigo-50 text-[10px] font-bold text-indigo-600">
+            {tasks.length}
+          </span>
+        </div>
+        <a href="#" className="text-xs font-semibold text-indigo-600 hover:text-indigo-700">View all →</a>
       </div>
       {tasks.length === 0 ? (
         <p className="text-sm text-zinc-400 text-center py-8">All caught up! 🎉</p>
       ) : (
-        <ul className="space-y-3">
+        <ul className="divide-y divide-zinc-100">
           {tasks.map(task => (
-            <li key={task.id} className={`rounded-xl border p-4 ${priorityStyle[task.priority]}`}>
-              <div className="flex items-start gap-3">
-                <span className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${priorityDot[task.priority]}`} />
+            <li key={task.id} className="group flex items-center justify-between py-4 hover:bg-zinc-50/50 transition-colors">
+              <div className="flex items-start gap-3 flex-1 min-w-0">
+                <span className={`mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full ${priorityDot[task.priority]}`} />
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-zinc-900">{task.title}</p>
-                  {task.description && (
-                    <p className="mt-0.5 text-xs text-zinc-500 truncate">{task.description}</p>
-                  )}
-                  <div className="mt-2 flex items-center gap-2">
-                    {task.badge && (
-                      <span className="rounded-md bg-white px-2 py-0.5 text-xs font-medium text-zinc-600 border border-zinc-200">
-                        {task.badge}
-                      </span>
+                  <p className="text-[13px] font-bold text-zinc-900 truncate">{task.title}</p>
+                  <div className="mt-1 flex items-center gap-2">
+                    {task.description && (
+                      <p className="text-[12px] text-zinc-500 truncate">{task.description}</p>
                     )}
-                    {task.dueDate && (
-                      <span className="text-xs text-zinc-400">Due {task.dueDate}</span>
+                    {task.badge && (
+                      <>
+                        <span className="text-[10px] text-zinc-300 shrink-0">•</span>
+                        <span className="text-[12px] text-zinc-500 shrink-0">{task.badge}</span>
+                      </>
                     )}
                   </div>
                 </div>
+              </div>
+              <div className="flex items-center gap-3 pl-4 shrink-0">
+                {task.dueDate && (
+                  <span className="rounded-md bg-indigo-50/50 px-2 py-1 text-[11px] font-semibold text-indigo-600 border border-indigo-100/50 whitespace-nowrap">
+                    Due {task.dueDate}
+                  </span>
+                )}
+                <span className="text-zinc-400 group-hover:text-zinc-600 transition-colors">
+                  →
+                </span>
               </div>
             </li>
           ))}

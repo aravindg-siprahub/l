@@ -20,7 +20,22 @@ export default function LoginPage() {
     try {
       const tokens = await apiLogin(form.email, form.password);
       saveTokens();
-      router.push('/dashboard');
+      
+      try {
+        // Fast-path redirect based on JWT role to avoid slow double-hops
+        const payload = JSON.parse(atob(tokens.access_token.split('.')[1]));
+        const role = payload.role;
+        
+        if (role === 'admin') router.push('/dashboard/admin');
+        else if (role === 'client_manager') router.push('/dashboard/client-manager');
+        else if (role === 'finance_team') router.push('/dashboard/finance');
+        else if (role === 'candidate') router.push('/dashboard/candidate');
+        else if (role === 'recruiter') router.push('/dashboard/recruiter');
+        else router.push('/dashboard');
+      } catch (e) {
+        // Fallback if parsing fails
+        router.push('/dashboard');
+      }
     } catch (err: any) {
       setError(err.message ?? 'Login failed. Please check your credentials.');
     } finally {

@@ -268,11 +268,11 @@ export default function TimesheetForm({
         <div className="lg:col-span-2 space-y-6">
           
           {/* Section 1: Timesheet Information */}
-          <section className="bg-white rounded-xl shadow-sm ring-1 ring-zinc-200 overflow-hidden">
-            <div className="bg-zinc-50 border-b border-zinc-200 px-6 py-4">
-              <h3 className="text-base font-semibold text-zinc-900">1. Timesheet Information</h3>
+          <section className="bg-white rounded-xl shadow-sm border border-zinc-200/80 p-6 space-y-6">
+            <div className="border-b border-zinc-100 pb-4">
+              <h3 className="text-lg font-semibold text-zinc-900 tracking-tight">1. Timesheet Information</h3>
             </div>
-            <div className="p-6 space-y-6">
+            <div className="space-y-6">
               <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
                 <div>
                   <label className="block text-sm font-medium text-zinc-900 mb-2">Period Start Date <span className="text-red-500">*</span></label>
@@ -322,14 +322,14 @@ export default function TimesheetForm({
           </section>
 
           {/* Section 2: Work Entries */}
-          <section className="bg-white rounded-xl shadow-sm ring-1 ring-zinc-200 overflow-hidden">
-            <div className="bg-zinc-50 border-b border-zinc-200 px-6 py-4 flex items-center justify-between">
-              <h3 className="text-base font-semibold text-zinc-900">2. Daily Work Entries</h3>
+          <section className="bg-white rounded-xl shadow-sm border border-zinc-200/80 p-6">
+            <div className="border-b border-zinc-100 pb-4 mb-6 flex items-center justify-between">
+              <h3 className="text-lg font-semibold text-zinc-900 tracking-tight">2. Daily Work Entries</h3>
               {!isReadOnly && (
                 <button
                   type="button"
                   onClick={handleAddEntry}
-                  className="inline-flex items-center gap-1.5 text-sm font-semibold text-indigo-600 hover:text-indigo-500 transition-colors"
+                  className="inline-flex items-center gap-1.5 text-sm font-semibold text-indigo-600 hover:text-indigo-500 transition-colors bg-indigo-50 hover:bg-indigo-100 px-3 py-1.5 rounded-lg"
                 >
                   <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
                     <path d="M10.75 4.75a.75.75 0 00-1.5 0v4.5h-4.5a.75.75 0 000 1.5h4.5v4.5a.75.75 0 001.5 0v-4.5h4.5a.75.75 0 000-1.5h-4.5v-4.5z" />
@@ -338,7 +338,7 @@ export default function TimesheetForm({
                 </button>
               )}
             </div>
-            <div className="p-6">
+            <div>
               {formData.entries.length === 0 ? (
                 <div className="text-center py-12 border-2 border-dashed border-zinc-200 rounded-xl">
                   <span className="text-4xl block mb-3">📝</span>
@@ -416,12 +416,12 @@ export default function TimesheetForm({
           </section>
 
           {/* Section 3: Review & Submit */}
-          {isEditable && (
-            <section className="bg-white rounded-xl shadow-sm ring-1 ring-zinc-200 overflow-hidden">
-              <div className="bg-zinc-50 border-b border-zinc-200 px-6 py-4">
-                <h3 className="text-base font-semibold text-zinc-900">3. Review & Submit</h3>
+          {!isReadOnly && (
+            <section className="bg-white rounded-xl shadow-sm border border-zinc-200/80 p-6">
+              <div className="border-b border-zinc-100 pb-4 mb-6">
+                <h3 className="text-lg font-semibold text-zinc-900 tracking-tight">3. Review & Submit</h3>
               </div>
-              <div className="p-6">
+              <div className="space-y-6">
                 <div className="rounded-lg bg-zinc-50 border border-zinc-200 p-5 mb-6">
                   <h4 className="text-sm font-semibold text-zinc-900 mb-2">Pre-submission Checklist</h4>
                   <ul className="text-sm text-zinc-600 space-y-2 list-disc list-inside">
@@ -481,9 +481,9 @@ export default function TimesheetForm({
 
           {/* Section 4: Post-Submission Actions */}
           {!isNew && canShare && (
-            <section className="bg-white rounded-xl shadow-sm ring-1 ring-zinc-200 overflow-hidden">
-              <div className="bg-zinc-50 border-b border-zinc-200 px-6 py-4">
-                <h3 className="text-base font-semibold text-zinc-900">4. Share with Client Manager</h3>
+            <section className="bg-white rounded-xl shadow-sm border border-zinc-200/80 p-6">
+              <div className="border-b border-zinc-100 pb-4 mb-6">
+                <h3 className="text-lg font-semibold text-zinc-900 tracking-tight">4. Share with Client Manager</h3>
               </div>
               <div className="p-6">
                 {timesheet?.shared_at ? (
@@ -565,45 +565,41 @@ export default function TimesheetForm({
 
         {/* Right Column: Sticky Summary */}
         <div className="lg:col-span-1">
-          <div className="sticky top-6 bg-zinc-900 rounded-xl shadow-lg ring-1 ring-zinc-950/5 p-6 text-white overflow-hidden">
-            {/* Background decoration */}
-            <div className="absolute top-0 right-0 -mr-16 -mt-16 text-zinc-800/50 opacity-20 transform rotate-12 pointer-events-none">
-              <svg width="150" height="150" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" />
-              </svg>
-            </div>
-
-            <h3 className="text-lg font-bold text-white mb-6 relative z-10">Live Summary</h3>
+          <div className="sticky top-6 bg-white rounded-xl shadow-sm border border-zinc-200/80 p-6 overflow-hidden">
+            {/* Top gradient accent */}
+            <div className="absolute top-0 left-0 w-full h-[4px] bg-gradient-to-r from-indigo-500 to-blue-500" />
+            
+            <h3 className="text-lg font-bold text-zinc-900 mb-6 tracking-tight">Live Summary</h3>
             
             <dl className="space-y-6 relative z-10">
               <div>
-                <dt className="text-sm font-medium text-zinc-400">Total Hours</dt>
-                <dd className="mt-1 text-4xl font-black text-indigo-400 tracking-tight">{totalHours}<span className="text-2xl text-indigo-500 font-bold ml-1">h</span></dd>
+                <dt className="text-sm font-medium text-zinc-500">Total Hours</dt>
+                <dd className="mt-1 text-4xl font-black text-indigo-600 tracking-tight">{totalHours}<span className="text-2xl text-indigo-400 font-bold ml-1">h</span></dd>
               </div>
               
-              <div className="pt-6 border-t border-zinc-800">
-                <dt className="text-sm font-medium text-zinc-400">Working Days</dt>
-                <dd className="mt-1 text-2xl font-bold text-white">{workingDays} <span className="text-base font-normal text-zinc-500">days logged</span></dd>
+              <div className="pt-6 border-t border-zinc-100">
+                <dt className="text-sm font-medium text-zinc-500">Working Days</dt>
+                <dd className="mt-1 text-2xl font-bold text-zinc-900">{workingDays} <span className="text-sm font-normal text-zinc-400">days logged</span></dd>
               </div>
               
-              <div className="pt-6 border-t border-zinc-800">
-                <dt className="text-sm font-medium text-zinc-400">Current Status</dt>
+              <div className="pt-6 border-t border-zinc-100">
+                <dt className="text-sm font-medium text-zinc-500">Current Status</dt>
                 <dd className="mt-2">
-                  <span className={`inline-flex items-center rounded-md px-3 py-1 text-sm font-semibold ring-1 ring-inset ${
+                  <span className={`inline-flex items-center rounded-md px-3 py-1 text-xs font-semibold tracking-wide uppercase ${
                     timesheet?.status === 'submitted' || timesheet?.status === 'client_approved' || timesheet?.status === 'finance_approved'
-                      ? 'bg-emerald-500/10 text-emerald-400 ring-emerald-500/20'
+                      ? 'bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-600/20'
                       : timesheet?.status === 'client_rejected' || timesheet?.status === 'finance_rejected'
-                      ? 'bg-red-500/10 text-red-400 ring-red-500/20'
-                      : 'bg-zinc-500/10 text-zinc-300 ring-zinc-500/20'
+                      ? 'bg-red-50 text-red-700 ring-1 ring-inset ring-red-600/20'
+                      : 'bg-zinc-100 text-zinc-700 ring-1 ring-inset ring-zinc-500/20'
                   }`}>
-                    {timesheet?.status ? timesheet.status.replace('_', ' ').toUpperCase() : 'DRAFT'}
+                    {timesheet?.status ? timesheet.status.replace('_', ' ') : 'DRAFT'}
                   </span>
                 </dd>
               </div>
             </dl>
 
             {!isNew && timesheet?.updated_at && (
-              <div className="mt-8 pt-6 border-t border-zinc-800 text-xs text-zinc-500 relative z-10">
+              <div className="mt-8 pt-6 border-t border-zinc-100 text-xs text-zinc-500 relative z-10">
                 Last saved {formatDistanceToNow(parseISO(timesheet.updated_at), { addSuffix: true })}
               </div>
             )}

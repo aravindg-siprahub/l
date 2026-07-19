@@ -4,22 +4,24 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { clearTokens } from '@/lib/session';
 import { apiLogout } from '@/lib/auth';
+import { PanelLeftClose, PanelLeftOpen, LogOut } from 'lucide-react';
 
 export interface NavItem {
   label: string;
   href: string;
-  icon: string;
+  icon: React.ReactNode;
 }
 
 interface DashboardSidebarProps {
   role: string;
   userName: string;
   navItems: NavItem[];
+  collapsed: boolean;
+  onCollapseToggle: () => void;
 }
 
-export default function DashboardSidebar({ role, userName, navItems }: DashboardSidebarProps) {
+export default function DashboardSidebar({ role, userName, navItems, collapsed, onCollapseToggle }: DashboardSidebarProps) {
   const pathname = usePathname();
-  const [collapsed, setCollapsed] = useState(false);
 
   const handleLogout = async () => {
     try {
@@ -31,85 +33,86 @@ export default function DashboardSidebar({ role, userName, navItems }: Dashboard
     window.location.href = '/login';
   };
 
-  const roleLabel: Record<string, string> = {
-    admin: 'Administrator',
-    recruiter: 'Recruiter',
-    client_manager: 'Client Manager',
-    finance_team: 'Finance Team',
-    candidate: 'Candidate',
-  };
-
   return (
     <aside
-      className={`fixed inset-y-0 left-0 z-40 flex flex-col bg-white border-r border-zinc-200 shadow-sm transition-all duration-300 ${
-        collapsed ? 'w-16' : 'w-64'
+      className={`fixed inset-y-0 left-0 z-40 flex flex-col bg-white border-r border-zinc-200 shadow-sm transition-all duration-300 dark:bg-zinc-950 dark:border-zinc-800 ${
+        collapsed ? 'w-20' : 'w-56'
       }`}
     >
       {/* Logo */}
-      <div className="flex h-16 shrink-0 items-center justify-between px-4 border-b border-zinc-200">
-        {!collapsed && (
-          <Link href="/dashboard" className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-600 text-white font-bold text-xl">L</div>
-            <span className="text-lg font-bold tracking-tight text-zinc-900">Lorvish</span>
-          </Link>
-        )}
-        {collapsed && (
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-600 text-white font-bold text-xl mx-auto">L</div>
-        )}
-        <button
-          onClick={() => setCollapsed(!collapsed)}
-          className={`text-zinc-400 hover:text-zinc-600 transition-colors ${collapsed ? 'mx-auto mt-1' : ''}`}
-          aria-label="Toggle sidebar"
-        >
-          {collapsed ? '→' : '←'}
-        </button>
+      <div className={`flex h-16 shrink-0 items-center border-b border-zinc-100 dark:border-zinc-800 px-4 ${collapsed ? 'justify-center' : 'justify-start'}`}>
+        <Link href="/dashboard" className="flex items-center gap-3">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-600 text-white font-bold text-lg shadow-sm shrink-0">L</div>
+          {!collapsed && <span className="text-lg font-bold tracking-tight text-zinc-900 dark:text-zinc-50">Lorvish</span>}
+        </Link>
       </div>
 
-      {/* User badge */}
-      {!collapsed && (
-        <div className="mx-3 my-3 rounded-xl bg-zinc-50 border border-zinc-200 p-3">
-          <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-indigo-600 font-semibold text-sm">
-              {userName.charAt(0).toUpperCase()}
-            </div>
-            <div className="min-w-0">
-              <p className="text-sm font-semibold text-zinc-900 truncate">{userName}</p>
-              <p className="text-xs text-zinc-500 truncate">{roleLabel[role] ?? role}</p>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Nav items */}
-      <nav className="flex-1 overflow-y-auto px-3 py-2 space-y-1">
+      <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-1">
         {navItems.map(item => {
-          const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
+          // Find the most specific active item
+          const isExactMatch = pathname === item.href;
+          const isParentMatch = pathname.startsWith(item.href + '/');
+          
+          // It's active if it's an exact match. 
+          // Or if it's a parent match AND there isn't a more specific exact match in the navItems
+          let isActive = false;
+          if (isExactMatch) {
+            isActive = true;
+          } else if (isParentMatch) {
+            // Check if there is any OTHER nav item that is a BETTER match (longer href)
+            const betterMatch = navItems.find(other => 
+              other.href !== item.href && 
+              (pathname === other.href || (pathname.startsWith(other.href + '/') && other.href.length > item.href.length))
+            );
+            if (!betterMatch) {
+              isActive = true;
+            }
+          }
+
           return (
             <Link
               key={item.href}
               href={item.href}
               title={collapsed ? item.label : undefined}
-              className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors ${
+              className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
                 isActive
-                  ? 'bg-indigo-50 text-indigo-700'
-                  : 'text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900'
+                  ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-500/10 dark:text-indigo-400'
+                  : 'text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800/50 dark:hover:text-zinc-50'
               }`}
             >
-              <span className="text-lg shrink-0">{item.icon}</span>
+              <span className={`shrink-0 ${isActive ? 'text-indigo-600 dark:text-indigo-400' : 'text-zinc-400 dark:text-zinc-500'}`}>
+                {item.icon}
+              </span>
               {!collapsed && <span className="truncate">{item.label}</span>}
             </Link>
           );
         })}
       </nav>
 
-      {/* Logout */}
-      <div className="p-3 border-t border-zinc-200">
+      {/* Footer Actions */}
+      <div className="p-4 pb-8 border-t border-zinc-100 dark:border-zinc-800 space-y-2">
+        <button
+          onClick={onCollapseToggle}
+          title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          className={`flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-zinc-500 hover:bg-zinc-100 hover:text-zinc-900 transition-colors ${collapsed ? 'justify-center' : ''}`}
+        >
+          {collapsed ? (
+            <PanelLeftOpen size={18} className="shrink-0" />
+          ) : (
+            <>
+              <PanelLeftClose size={18} className="shrink-0" />
+              <span>Collapse</span>
+            </>
+          )}
+        </button>
+
         <button
           onClick={handleLogout}
           title={collapsed ? 'Log out' : undefined}
-          className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-zinc-600 hover:bg-red-50 hover:text-red-700 transition-colors"
+          className={`flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-zinc-600 hover:bg-red-50 hover:text-red-700 dark:text-zinc-400 dark:hover:bg-red-500/10 dark:hover:text-red-400 transition-colors ${collapsed ? 'justify-center' : ''}`}
         >
-          <span className="text-lg shrink-0">🚪</span>
+          <LogOut size={18} className="shrink-0 text-zinc-400 group-hover:text-red-600 dark:text-zinc-500" />
           {!collapsed && <span>Log out</span>}
         </button>
       </div>

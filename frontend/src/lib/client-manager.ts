@@ -34,6 +34,19 @@ export interface ClientManagerStats {
   pending: number;
   approved_this_month: number;
   rejected_this_month: number;
+  avg_approval_time_hours: string;
+  total_timesheets: number;
+}
+
+export interface TrendDataPoint {
+  date: string;
+  approved: number;
+  shared: number;
+  rejected: number;
+}
+
+export interface TrendDataOut {
+  data: TrendDataPoint[];
 }
 
 // ── Query param types ─────────────────────────────────────────────────────────
@@ -89,6 +102,10 @@ export const clientManagerApi = {
   /** Live dashboard stats for the authenticated client manager. */
   getStats: async (): Promise<ClientManagerStats> => {
     return api.get<ClientManagerStats>('/timesheets/client-stats');
+  },
+
+  getTrendData: async (): Promise<TrendDataOut> => {
+    return api.get<TrendDataOut>('/timesheets/client-trend');
   },
 
   /** Audit log for a specific timesheet (assigned manager only). */

@@ -9,7 +9,7 @@ from app.core.db.models import User, TimesheetStatus
 from app.schemas.timesheet import (
     TimesheetCreate, TimesheetUpdate, TimesheetOut,
     TimesheetClientApprove, TimesheetClientReject, TimesheetSharePayload,
-    TimesheetAuditLogOut, PaginatedTimesheetResponse, ClientManagerStatsOut,
+    TimesheetAuditLogOut, PaginatedTimesheetResponse, ClientManagerStatsOut, TrendDataOut,
 )
 from app.services import timesheet_service
 
@@ -34,39 +34,23 @@ def get_timesheets(
     """Retrieve all timesheets for the authenticated candidate."""
     return timesheet_service.get_timesheets_for_candidate(db, current_user.id)
 
-
-@router.get("/{timesheet_id}", response_model=TimesheetOut)
-def get_timesheet(
-    timesheet_id: uuid.UUID,
+@router.get("/client-stats", response_model=ClientManagerStatsOut)
+def get_client_manager_stats(
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(require_client_manager),
 ):
-    """Retrieve a specific timesheet's details and entries."""
-    return timesheet_service.get_timesheet_by_id(db, timesheet_id, current_user.id)
+    """Live dashboard counts for the authenticated client manager."""
+    return timesheet_service.get_client_manager_stats(db, current_user.email)
 
-
-@router.put("/{timesheet_id}", response_model=TimesheetOut)
-def update_timesheet(
-    timesheet_id: uuid.UUID,
-    payload: TimesheetUpdate,
+@router.get("/client-trend", response_model=TrendDataOut)
+def get_client_manager_trend(
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(require_client_manager),
 ):
-    """Update a draft or rejected timesheet's entries."""
-    return timesheet_service.update_timesheet(db, timesheet_id, payload, current_user.id)
+    """Trend data for the past 7 days for the authenticated client manager."""
+    return timesheet_service.get_client_manager_trend(db, current_user.email)
 
 
-@router.post("/{timesheet_id}/submit", response_model=TimesheetOut)
-def submit_timesheet(
-    timesheet_id: uuid.UUID,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
-    """Submit a draft/rejected timesheet for approval."""
-    return timesheet_service.submit_timesheet(db, timesheet_id, current_user.id)
-
-
-# --- Client Manager Routes ---
 
 @router.get("/client-pending/", response_model=PaginatedTimesheetResponse)
 def get_client_pending_timesheets(
@@ -127,13 +111,41 @@ def get_timesheet_for_client_review(
     return TimesheetOut.from_orm_with_candidate(ts)
 
 
-@router.get("/client-stats", response_model=ClientManagerStatsOut)
-def get_client_manager_stats(
+@router.get("/{timesheet_id}", response_model=TimesheetOut)
+def get_timesheet(
+    timesheet_id: uuid.UUID,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_client_manager),
+    current_user: User = Depends(get_current_user)
 ):
-    """Live dashboard counts for the authenticated client manager."""
-    return timesheet_service.get_client_manager_stats(db, current_user.email)
+    """Retrieve a specific timesheet's details and entries."""
+    return timesheet_service.get_timesheet_by_id(db, timesheet_id, current_user.id)
+
+
+@router.put("/{timesheet_id}", response_model=TimesheetOut)
+def update_timesheet(
+    timesheet_id: uuid.UUID,
+    payload: TimesheetUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Update a draft or rejected timesheet's entries."""
+    return timesheet_service.update_timesheet(db, timesheet_id, payload, current_user.id)
+
+
+@router.post("/{timesheet_id}/submit", response_model=TimesheetOut)
+def submit_timesheet(
+    timesheet_id: uuid.UUID,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Submit a draft/rejected timesheet for approval."""
+    return timesheet_service.submit_timesheet(db, timesheet_id, current_user.id)
+
+
+# --- Client Manager Routes ---
+
+
+
 
 
 @router.get("/{timesheet_id}/audit", response_model=list[TimesheetAuditLogOut])

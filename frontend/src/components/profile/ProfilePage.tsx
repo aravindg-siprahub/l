@@ -165,45 +165,42 @@ export default function ProfilePage() {
       {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
 
       {/* Hero Header */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-zinc-900 via-zinc-800 to-zinc-900 p-8">
-        {/* Background decoration */}
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute -top-20 -right-20 w-80 h-80 rounded-full bg-indigo-500 blur-3xl" />
-          <div className="absolute -bottom-20 -left-20 w-80 h-80 rounded-full bg-violet-500 blur-3xl" />
-        </div>
+      <div className="relative overflow-hidden rounded-2xl bg-white border border-zinc-200/80 shadow-sm p-8">
+        {/* Top gradient accent */}
+        <div className="absolute top-0 left-0 w-full h-[4px] bg-gradient-to-r from-indigo-500 to-blue-500" />
 
         <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-center gap-6">
           {/* Avatar */}
-          <div className={`flex-shrink-0 w-20 h-20 rounded-2xl bg-gradient-to-br ${getAvatarGradient(user.role)} flex items-center justify-center shadow-xl ring-4 ring-white/10`}>
+          <div className={`flex-shrink-0 w-20 h-20 rounded-2xl bg-gradient-to-br ${getAvatarGradient(user.role)} flex items-center justify-center shadow-md ring-4 ring-white`}>
             <span className="text-2xl font-black text-white tracking-tight">{getInitials(user.full_name)}</span>
           </div>
 
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-3 flex-wrap">
-              <h1 className="text-2xl font-black text-white tracking-tight">{user.full_name}</h1>
+              <h1 className="text-2xl font-black text-zinc-900 tracking-tight">{user.full_name}</h1>
               <span className={`inline-flex items-center rounded-lg px-2.5 py-1 text-xs font-bold ring-1 ring-inset ${getRoleBadgeStyle(user.role)}`}>
                 {getRoleLabel(user.role)}
               </span>
               {user.is_active ? (
-                <span className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-500/20 px-2.5 py-1 text-xs font-bold text-emerald-400 ring-1 ring-emerald-500/30">
-                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                <span className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-700 ring-1 ring-emerald-600/20">
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
                   Active
                 </span>
               ) : (
-                <span className="inline-flex items-center gap-1.5 rounded-lg bg-red-500/20 px-2.5 py-1 text-xs font-bold text-red-400 ring-1 ring-red-500/30">
+                <span className="inline-flex items-center gap-1.5 rounded-lg bg-red-50 px-2.5 py-1 text-xs font-bold text-red-700 ring-1 ring-red-600/20">
                   Inactive
                 </span>
               )}
             </div>
-            <p className="mt-1 text-sm text-zinc-400">{user.email}</p>
-            <p className="mt-0.5 text-xs text-zinc-500">
+            <p className="mt-1 text-sm text-zinc-500">{user.email}</p>
+            <p className="mt-0.5 text-xs text-zinc-400">
               Member since {format(parseISO(user.created_at), 'MMMM d, yyyy')}
             </p>
           </div>
 
           <button
             onClick={() => { setEditingName(true); setActiveTab('personal'); }}
-            className="flex-shrink-0 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 px-4 py-2 text-sm font-semibold text-white transition-colors"
+            className="flex-shrink-0 rounded-xl bg-white border border-zinc-200 shadow-sm px-4 py-2 text-sm font-semibold text-zinc-700 hover:bg-zinc-50 transition-colors"
           >
             ✏️ Edit Profile
           </button>
@@ -214,9 +211,9 @@ export default function ProfilePage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left Panel — Info Card */}
         <div className="space-y-4">
-          <div className="bg-white rounded-2xl shadow-sm ring-1 ring-zinc-200 overflow-hidden">
+          <div className="bg-white rounded-2xl shadow-sm border border-zinc-200/80 overflow-hidden">
             <div className="p-5 border-b border-zinc-100">
-              <h3 className="text-sm font-bold text-zinc-900 uppercase tracking-wider">Account Information</h3>
+              <h3 className="text-xs font-bold text-zinc-900 uppercase tracking-wider">Account Information</h3>
             </div>
             <div className="p-5 space-y-4">
               <InfoRow icon="✉️" label="Email" value={user.email} />
@@ -244,8 +241,8 @@ export default function ProfilePage() {
           </div>
 
           {/* Quick actions */}
-          <div className="bg-white rounded-2xl shadow-sm ring-1 ring-zinc-200 p-5">
-            <h3 className="text-sm font-bold text-zinc-900 uppercase tracking-wider mb-4">Quick Actions</h3>
+          <div className="bg-white rounded-2xl shadow-sm border border-zinc-200/80 p-5">
+            <h3 className="text-xs font-bold text-zinc-900 uppercase tracking-wider mb-4">Quick Actions</h3>
             <div className="space-y-2">
               <QuickAction icon="✏️" label="Edit Name" onClick={() => { setActiveTab('personal'); setEditingName(true); }} />
               <QuickAction icon="🔒" label="Change Password" onClick={() => setActiveTab('security')} />
@@ -256,15 +253,15 @@ export default function ProfilePage() {
         {/* Right Panel — Tabs */}
         <div className="lg:col-span-2 space-y-4">
           {/* Tab Nav */}
-          <div className="bg-white rounded-2xl shadow-sm ring-1 ring-zinc-200 p-1.5 flex gap-1">
+          <div className="bg-zinc-100/80 rounded-2xl p-1.5 flex gap-1">
             {tabs.map(tab => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex-1 flex items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-sm font-semibold transition-all ${
+                className={`flex-1 flex items-center justify-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold transition-all ${
                   activeTab === tab.id
-                    ? 'bg-indigo-600 text-white shadow-sm'
-                    : 'text-zinc-500 hover:text-zinc-700 hover:bg-zinc-50'
+                    ? 'bg-white text-zinc-900 shadow-sm ring-1 ring-zinc-200/50'
+                    : 'text-zinc-500 hover:text-zinc-700 hover:bg-zinc-200/50'
                 }`}
               >
                 <span>{tab.icon}</span>
@@ -274,7 +271,7 @@ export default function ProfilePage() {
           </div>
 
           {/* Tab Content */}
-          <div className="bg-white rounded-2xl shadow-sm ring-1 ring-zinc-200 overflow-hidden">
+          <div className="bg-white rounded-2xl shadow-sm border border-zinc-200/80 overflow-hidden">
             {activeTab === 'personal' && (
               <PersonalTab
                 user={user}

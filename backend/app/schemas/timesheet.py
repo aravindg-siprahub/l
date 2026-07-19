@@ -157,3 +157,14 @@ class ClientManagerStatsOut(BaseModel):
     pending: int
     approved_this_month: int
     rejected_this_month: int
+    avg_approval_time_hours: str
+    total_timesheets: int
+
+class TrendDataPoint(BaseModel):
+    date: str
+    approved: int
+    shared: int
+    rejected: int
+
+class TrendDataOut(BaseModel):
+    data: list[TrendDataPoint]
