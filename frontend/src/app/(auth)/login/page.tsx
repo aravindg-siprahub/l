@@ -95,10 +95,6 @@ export default function LoginPage() {
         </button>
       </form>
 
-      <p className="mt-6 text-center text-sm text-zinc-500">
-        Don&apos;t have an account?{' '}
-        <a href="/register" className="font-semibold text-indigo-600 hover:text-indigo-500">Get started</a>
-      </p>
     </div>
   );
 }
