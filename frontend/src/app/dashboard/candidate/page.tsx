@@ -9,10 +9,10 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Badge } from '@/components/ui/Badge';
 import { Timeline, TimelineItem } from '@/components/ui/Timeline';
 import { 
-  FileEdit, 
-  Send, 
-  Users, 
-  CheckCircle2, 
+  FileText, 
+  SendHorizontal, 
+  Share2, 
+  CheckCircle, 
   XCircle,
   Calendar,
   PlusCircle,
@@ -21,8 +21,7 @@ import {
   ChevronDown,
   ArrowRight,
   TrendingUp,
-  Minus,
-  FileText
+  Minus
 } from 'lucide-react';
 
 export default function CandidateDashboard() {
@@ -59,11 +58,11 @@ export default function CandidateDashboard() {
     const rejected = timesheets.filter(t => t.status === 'client_rejected' || t.status === 'finance_rejected').length;
 
     return [
-      { title: 'Draft', value: draft.toString(), icon: <FileEdit size={18} strokeWidth={1.75} className="text-indigo-500" />, accent: 'bg-indigo-500', trend: <Minus size={14} className="mr-1 text-zinc-400" />, trendText: 'vs last 30 days' },
-      { title: 'Submitted', value: submitted.toString(), icon: <Send size={18} strokeWidth={1.75} className="text-blue-500" />, accent: 'bg-blue-500', trend: <Minus size={14} className="mr-1 text-zinc-400" />, trendText: 'vs last 30 days' },
-      { title: 'Shared', value: shared.toString(), icon: <Users size={18} strokeWidth={1.75} className="text-orange-500" />, accent: 'bg-orange-500', trend: <TrendingUp size={14} className="mr-1 text-emerald-500" />, trendText: '100% vs last 30 days', trendClass: 'text-emerald-600 dark:text-emerald-400' },
-      { title: 'Approved', value: approved.toString(), icon: <CheckCircle2 size={18} strokeWidth={1.75} className="text-emerald-500" />, accent: 'bg-emerald-500', trend: <TrendingUp size={14} className="mr-1 text-emerald-500" />, trendText: '100% vs last 30 days', trendClass: 'text-emerald-600 dark:text-emerald-400' },
-      { title: 'Rejected', value: rejected.toString(), icon: <XCircle size={18} strokeWidth={1.75} className="text-red-500" />, accent: 'bg-red-500', trend: <Minus size={14} className="mr-1 text-zinc-400" />, trendText: 'vs last 30 days' },
+      { title: 'Draft', value: draft.toString(), icon: <FileText size={18} strokeWidth={2} className="text-indigo-500" />, accent: 'bg-indigo-500', trend: <Minus size={14} className="mr-1 text-zinc-400" />, trendText: 'vs last 30 days' },
+      { title: 'Submitted', value: submitted.toString(), icon: <SendHorizontal size={18} strokeWidth={2} className="text-blue-500" />, accent: 'bg-blue-500', trend: <Minus size={14} className="mr-1 text-zinc-400" />, trendText: 'vs last 30 days' },
+      { title: 'Shared', value: shared.toString(), icon: <Share2 size={18} strokeWidth={2} className="text-orange-500" />, accent: 'bg-orange-500', trend: <TrendingUp size={14} className="mr-1 text-emerald-500" />, trendText: '100% vs last 30 days', trendClass: 'text-emerald-600 dark:text-emerald-400' },
+      { title: 'Approved', value: approved.toString(), icon: <CheckCircle size={18} strokeWidth={2} className="text-emerald-500" />, accent: 'bg-emerald-500', trend: <TrendingUp size={14} className="mr-1 text-emerald-500" />, trendText: '100% vs last 30 days', trendClass: 'text-emerald-600 dark:text-emerald-400' },
+      { title: 'Rejected', value: rejected.toString(), icon: <XCircle size={18} strokeWidth={2} className="text-red-500" />, accent: 'bg-red-500', trend: <Minus size={14} className="mr-1 text-zinc-400" />, trendText: 'vs last 30 days' },
     ];
   }, [timesheets]);
 
@@ -93,15 +92,15 @@ export default function CandidateDashboard() {
       return { label: 'Rejected', badge: 'danger' as const, icon: <XCircle size={14} className="text-red-600" />, desc: 'Rejected in review' };
     }
     if (ts.status === 'client_approved' || ts.status === 'finance_approved') {
-      return { label: 'Approved', badge: 'success' as const, icon: <CheckCircle2 size={14} className="text-emerald-600" />, desc: 'Approved in workflow' };
+      return { label: 'Approved', badge: 'success' as const, icon: <CheckCircle size={14} className="text-emerald-600" />, desc: 'Approved in workflow' };
     }
     if (ts.shared_at) {
-      return { label: 'Shared', badge: 'warning' as const, icon: <Users size={14} className="text-amber-600" />, desc: 'Shared with Client Manager' };
+      return { label: 'Shared', badge: 'warning' as const, icon: <Share2 size={14} className="text-amber-600" />, desc: 'Shared with Client Manager' };
     }
     if (ts.status === 'submitted') {
-      return { label: 'Submitted', badge: 'info' as const, icon: <Send size={14} className="text-blue-600" />, desc: 'Submitted for approval' };
+      return { label: 'Submitted', badge: 'info' as const, icon: <SendHorizontal size={14} className="text-blue-600" />, desc: 'Awaiting review' };
     }
-    return { label: 'Draft', badge: 'default' as const, icon: <FileEdit size={14} className="text-zinc-600" />, desc: 'Draft saved' };
+    return { label: 'Draft', badge: 'secondary' as const, icon: <FileText size={14} className="text-zinc-500" />, desc: 'Not yet submitted' };
   };
 
   return (
@@ -137,22 +136,20 @@ export default function CandidateDashboard() {
           {/* Stats row */}
           <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
             {stats.map((s, idx) => (
-              <Card key={idx} className="relative overflow-hidden group border-zinc-200/60 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.04)] hover:shadow-[0_8px_24px_-4px_rgba(0,0,0,0.08)] hover:-translate-y-0.5 transition-all duration-300">
-                {/* Subtle top accent line */}
-                <div className={`absolute top-0 left-0 w-full h-[3px] ${s.accent}`} />
-                <CardContent className="p-4 flex flex-col justify-between h-full">
-                  <div className="flex items-center gap-2 mb-3 mt-1">
-                    <div className="flex items-center justify-center flex-shrink-0">
+              <Card key={idx} className="relative rounded-2xl group border-zinc-200/60 bg-white shadow-[0_2px_8px_-3px_rgba(0,0,0,0.03)] hover:shadow-md hover:-translate-y-0.5 transition-all duration-300">
+                <CardContent className="p-4 !pt-4 flex flex-col h-full">
+                  <div className="flex justify-between items-center mb-2">
+                    <p className="text-sm font-medium text-zinc-500 tracking-tight">{s.title}</p>
+                    <div className="flex items-center justify-center w-8 h-8 rounded-full bg-zinc-50 border border-zinc-100 shadow-sm shrink-0">
                       {s.icon}
                     </div>
-                    <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500 truncate">{s.title}</p>
                   </div>
                   <div>
-                    <h4 className="text-2xl font-black text-zinc-900 dark:text-zinc-50 tracking-tight leading-none">{s.value}</h4>
-                    <div className={`mt-1.5 flex items-center text-[11px] font-medium ${s.trendClass || 'text-zinc-400 dark:text-zinc-500'}`}>
-                      {s.trend}
-                      <span className="truncate text-zinc-500">{s.trendText}</span>
-                    </div>
+                    <h4 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50 tracking-tight leading-none">{s.value}</h4>
+                  </div>
+                  <div className={`mt-auto pt-3 flex items-center text-[11px] font-medium ${s.trendClass || 'text-zinc-400 dark:text-zinc-500'}`}>
+                    {s.trend}
+                    <span className="truncate text-zinc-500">{s.trendText}</span>
                   </div>
                 </CardContent>
               </Card>
@@ -231,25 +228,25 @@ export default function CandidateDashboard() {
                       return (
                         <Card key={ts.id} className="bg-white dark:bg-zinc-950 hover:border-zinc-300 transition-colors">
                           <CardContent className="p-4">
-                            <div className="flex items-start justify-between gap-2">
-                              <div className="flex items-start gap-3 min-w-0">
-                                <div className="h-10 w-10 shrink-0 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 flex items-center justify-center mt-0.5">
-                                  <Calendar size={18} className="text-indigo-600 dark:text-indigo-400" />
-                                </div>
-                                <div className="min-w-0">
-                                  <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-50 truncate">
-                                    {format(parseISO(ts.period_start_date), 'MMM dd')} - {format(parseISO(ts.period_end_date), 'MMM dd, yyyy')}
-                                  </p>
-                                  <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1 line-clamp-2">
-                                    {ts.total_hours} Hours &bull; Submitted {formatDistanceToNow(parseISO(ts.updated_at), { addSuffix: true })}
-                                  </p>
+                            <div className="flex items-start gap-3">
+                              <div className="h-10 w-10 shrink-0 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 flex items-center justify-center">
+                                <Calendar size={18} className="text-indigo-600 dark:text-indigo-400" />
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <div className="flex items-start justify-between gap-2">
+                                  <div className="min-w-0">
+                                    <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-50 truncate">
+                                      {format(parseISO(ts.period_start_date), 'MMM dd')} - {format(parseISO(ts.period_end_date), 'MMM dd, yyyy')}
+                                    </p>
+                                    <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1 truncate">
+                                      {ts.total_hours} Hours &bull; Submitted {formatDistanceToNow(parseISO(ts.updated_at), { addSuffix: true })}
+                                    </p>
+                                  </div>
+                                  <Badge variant={status.badge === 'success' ? 'warning' : status.badge} className="whitespace-nowrap shrink-0 mt-0.5">
+                                    {ts.status === 'client_approved' ? 'Under HR Review' : 'Awaiting Client Approval'}
+                                  </Badge>
                                 </div>
                               </div>
-                            </div>
-                            <div className="mt-3 flex justify-end">
-                              <Badge variant={status.badge === 'success' ? 'warning' : status.badge} className="whitespace-nowrap">
-                                {ts.status === 'client_approved' ? 'Under HR Review' : 'Awaiting Client Approval'}
-                              </Badge>
                             </div>
                           </CardContent>
                         </Card>
@@ -274,11 +271,11 @@ export default function CandidateDashboard() {
                 <div className="grid grid-cols-2 gap-3">
                   <Link href="/dashboard/candidate/timesheets/new" className="block group h-full">
                     <Card className="h-full hover:border-indigo-300 dark:hover:border-indigo-800 transition-colors bg-white dark:bg-zinc-950 shadow-sm hover:shadow-md">
-                      <CardContent className="p-4 flex flex-col gap-2">
-                        <div className="h-9 w-9 shrink-0 rounded-lg bg-indigo-50 dark:bg-indigo-500/10 flex items-center justify-center">
+                      <CardContent className="p-4 flex items-center gap-3">
+                        <div className="h-10 w-10 shrink-0 rounded-lg bg-indigo-50 dark:bg-indigo-500/10 flex items-center justify-center">
                           <PlusCircle size={18} className="text-indigo-600 dark:text-indigo-400" />
                         </div>
-                        <div className="min-w-0 mt-1">
+                        <div className="min-w-0">
                           <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-50 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors truncate">
                             Submit Time
                           </p>
@@ -290,11 +287,11 @@ export default function CandidateDashboard() {
 
                   <Link href="/dashboard/candidate/timesheets" className="block group h-full">
                     <Card className="h-full hover:border-blue-300 dark:hover:border-blue-800 transition-colors bg-white dark:bg-zinc-950 shadow-sm hover:shadow-md">
-                      <CardContent className="p-4 flex flex-col gap-2">
-                        <div className="h-9 w-9 shrink-0 rounded-lg bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center">
+                      <CardContent className="p-4 flex items-center gap-3">
+                        <div className="h-10 w-10 shrink-0 rounded-lg bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center">
                           <Calendar size={18} className="text-blue-600 dark:text-blue-400" />
                         </div>
-                        <div className="min-w-0 mt-1">
+                        <div className="min-w-0">
                           <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-50 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors truncate">
                             Timesheets
                           </p>
@@ -306,11 +303,11 @@ export default function CandidateDashboard() {
 
                   <Link href="/dashboard/candidate/profile" className="block group h-full">
                     <Card className="h-full hover:border-emerald-300 dark:hover:border-emerald-800 transition-colors bg-white dark:bg-zinc-950 shadow-sm hover:shadow-md">
-                      <CardContent className="p-4 flex flex-col gap-2">
-                        <div className="h-9 w-9 shrink-0 rounded-lg bg-emerald-50 dark:bg-emerald-500/10 flex items-center justify-center">
+                      <CardContent className="p-4 flex items-center gap-3">
+                        <div className="h-10 w-10 shrink-0 rounded-lg bg-emerald-50 dark:bg-emerald-500/10 flex items-center justify-center">
                           <UserCircle size={18} className="text-emerald-600 dark:text-emerald-400" />
                         </div>
-                        <div className="min-w-0 mt-1">
+                        <div className="min-w-0">
                           <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-50 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors truncate">
                             My Profile
                           </p>
@@ -322,11 +319,11 @@ export default function CandidateDashboard() {
 
                   <Link href="/dashboard/candidate/reports" className="block group h-full">
                     <Card className="h-full hover:border-orange-300 dark:hover:border-orange-800 transition-colors bg-white dark:bg-zinc-950 shadow-sm hover:shadow-md">
-                      <CardContent className="p-4 flex flex-col gap-2">
-                        <div className="h-9 w-9 shrink-0 rounded-lg bg-orange-50 dark:bg-orange-500/10 flex items-center justify-center">
+                      <CardContent className="p-4 flex items-center gap-3">
+                        <div className="h-10 w-10 shrink-0 rounded-lg bg-orange-50 dark:bg-orange-500/10 flex items-center justify-center">
                           <FileText size={18} className="text-orange-600 dark:text-orange-400" />
                         </div>
-                        <div className="min-w-0 mt-1">
+                        <div className="min-w-0">
                           <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-50 group-hover:text-orange-600 dark:group-hover:text-orange-400 transition-colors truncate">
                             Reports
                           </p>

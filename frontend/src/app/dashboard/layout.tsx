@@ -135,23 +135,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <header className="print:hidden sticky top-0 z-30 h-16 flex items-center justify-between px-8 bg-zinc-50 dark:bg-zinc-900 border-none">
           <div className="flex-1"></div>
           
-          {/* Global Search Mock */}
-          <div className="flex-1 max-w-md mx-auto hidden md:block">
-            <div className="relative group">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <Search size={16} className="text-zinc-400 group-focus-within:text-indigo-500 transition-colors" />
-              </div>
-              <input
-                type="text"
-                placeholder="Search timesheets, invoices..."
-                className="block w-full pl-10 pr-12 py-2.5 border border-zinc-200/60 dark:border-zinc-800 rounded-full leading-5 bg-white/80 backdrop-blur-sm dark:bg-zinc-950/80 text-zinc-900 dark:text-zinc-50 placeholder-zinc-400 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm shadow-[0_2px_8px_-2px_rgba(0,0,0,0.05)] hover:border-zinc-300 transition-all"
-              />
-              <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                <span className="text-xs font-semibold text-zinc-400 border border-zinc-200 dark:border-zinc-800 rounded px-1.5 py-0.5">⌘ K</span>
-              </div>
-            </div>
-          </div>
-          
           <div className="flex-1 flex justify-end items-center gap-4">
             <button className="relative p-2 rounded-full text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors focus:outline-none">
               <Bell size={20} />
