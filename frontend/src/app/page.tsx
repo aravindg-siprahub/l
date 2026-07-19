@@ -1,4 +1,4 @@
-import Sidebar from '@/components/marketing/Sidebar';
+import Navbar from '@/components/marketing/Navbar';
 import Hero from '@/components/marketing/Hero';
 import Features from '@/components/marketing/Features';
 import Workflow from '@/components/marketing/Workflow';
@@ -14,19 +14,17 @@ export const metadata = {
 
 export default function LandingPage() {
   return (
-    <div className="flex min-h-screen bg-white dark:bg-zinc-950 font-sans">
-      <Sidebar />
-      <div className="flex-1 md:pl-64 flex flex-col min-h-screen">
-        <main className="flex-1">
-          <Hero />
-          <Features />
-          <Workflow />
-          <PlatformBenefits />
-          <FAQ />
-          <Contact />
-        </main>
-        <Footer />
-      </div>
+    <div className="flex min-h-screen flex-col bg-gradient-to-br from-white via-pink-50/50 to-cyan-50/60 dark:from-zinc-950 dark:via-zinc-950 dark:to-zinc-950 font-sans">
+      <Navbar />
+      <main className="flex-1">
+        <Hero />
+        <Features />
+        <Workflow />
+        <PlatformBenefits />
+        <FAQ />
+        <Contact />
+      </main>
+      <Footer />
     </div>
   );
 }

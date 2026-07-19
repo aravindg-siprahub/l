@@ -28,7 +28,7 @@ export default function FAQ() {
   const [openIndex, setOpenIndex] = useState<number | null>(0);
 
   return (
-    <div id="faq" className="bg-white py-24 sm:py-32">
+    <div id="faq" className="py-24 sm:py-32">
       <div className="mx-auto max-w-7xl px-6 lg:px-8">
         <div className="mx-auto max-w-4xl divide-y divide-zinc-200">
           <h2 className="text-2xl font-bold leading-10 tracking-tight text-zinc-900 text-center mb-10">
