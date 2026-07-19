@@ -1,14 +1,14 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Clock, CheckCircle2, XCircle, Timer, FileText, ClipboardList, UserCircle, BarChart3 } from 'lucide-react';
+import { Clock, CheckCircle2, XCircle, Timer, FileText, ClipboardList, UserCircle, BarChart3, Share2, Send } from 'lucide-react';
 import StatsCard from '@/components/dashboard/StatsCard';
 import ActivityFeed, { ActivityItem } from '@/components/dashboard/ActivityFeed';
 import TaskList, { Task } from '@/components/dashboard/TaskList';
 import AnalyticsPlaceholder from '@/components/dashboard/AnalyticsPlaceholder';
 import TrendChart from '@/components/dashboard/TrendChart';
 import QuickActions, { QuickAction } from '@/components/dashboard/QuickActions';
-import { clientManagerApi, ClientManagerStats, PaginatedTimesheetResponse, TrendDataPoint } from '@/lib/client-manager';
+import { clientManagerApi, ClientManagerStats, PaginatedTimesheetResponse, TrendDataPoint, RecentActivityOut } from '@/lib/client-manager';
 import { formatDistanceToNow, parseISO, format } from 'date-fns';
 
 const actions: QuickAction[] = [
@@ -23,7 +23,7 @@ export default function ClientManagerDashboard() {
   const [statsLoading, setStatsLoading] = useState(true);
   
   const [pendingData, setPendingData] = useState<PaginatedTimesheetResponse | null>(null);
-  const [activityData, setActivityData] = useState<PaginatedTimesheetResponse | null>(null);
+  const [activityData, setActivityData] = useState<RecentActivityOut[]>([]);
   const [trendData, setTrendData] = useState<TrendDataPoint[]>([]);
 
   useEffect(() => {
@@ -39,8 +39,8 @@ export default function ClientManagerDashboard() {
       .then(data => setPendingData(data))
       .catch(() => {});
       
-    // Fetch top 5 recently processed for ActivityFeed
-    clientManagerApi.getPending({ status_filter: 'client_approved,client_rejected', page_size: 5 })
+    // Fetch top 10 recent activities for ActivityFeed
+    clientManagerApi.getRecentActivity()
       .then(data => setActivityData(data))
       .catch(() => {});
       
@@ -59,17 +59,50 @@ export default function ClientManagerDashboard() {
     dueDate: ts.submitted_at ? format(parseISO(ts.submitted_at), 'MMM d, yyyy') : undefined,
   }));
 
-  const activities: ActivityItem[] = (activityData?.items || []).map(ts => {
-    const isApproved = ts.status === 'client_approved';
+  const activities: ActivityItem[] = activityData.map(log => {
+    let title = 'Unknown action';
+    let icon = <CheckCircle2 size={18} strokeWidth={2.5} />;
+    let color: ActivityItem['color'] = 'zinc';
+    let badgeLabel = 'Action';
+    let subtitle = `${format(parseISO(log.period_start_date), 'MMM d')} - ${format(parseISO(log.period_end_date), 'MMM d, yyyy')} • ${log.total_hours} Hours`;
+    let description = '';
+
+    if (log.action === 'submitted' || log.action === 'resubmitted') {
+      title = 'Timesheet submitted';
+      description = `Submitted for approval by ${log.candidate_name}`;
+      badgeLabel = 'Submitted';
+      color = 'blue';
+      icon = <Send size={18} strokeWidth={2.5} />;
+    } else if (log.action === 'shared') {
+      title = 'Timesheet shared';
+      description = `Shared with you by ${log.candidate_name}`;
+      badgeLabel = 'Shared';
+      color = 'indigo';
+      icon = <Share2 size={18} strokeWidth={2.5} />;
+    } else if (log.action === 'client_approved') {
+      title = 'Timesheet approved by you';
+      description = `Approved by ${log.actor_name || 'You'}`;
+      badgeLabel = 'Approved';
+      color = 'emerald';
+      icon = <CheckCircle2 size={18} strokeWidth={2.5} />;
+    } else if (log.action === 'client_rejected') {
+      title = 'Timesheet rejected by you';
+      description = `Rejected by ${log.actor_name || 'You'}`;
+      badgeLabel = 'Rejected';
+      color = 'red';
+      icon = <XCircle size={18} strokeWidth={2.5} />;
+    }
+
     return {
-      id: ts.id,
-      actor: 'You',
-      action: isApproved ? 'approved timesheet for' : 'rejected timesheet for',
-      target: ts.candidate_name || 'Unknown Candidate',
-      time: ts.updated_at ? formatDistanceToNow(parseISO(ts.updated_at), { addSuffix: true }) : 'Recently',
-      icon: isApproved ? '✅' : '❌',
-      color: isApproved ? 'emerald' : 'red',
-      statusLabel: isApproved ? 'Approved' : 'Rejected',
+      id: log.id,
+      title,
+      subtitle,
+      description,
+      timeAgo: formatDistanceToNow(parseISO(log.created_at), { addSuffix: true }),
+      badgeLabel,
+      icon,
+      color,
+      href: `/dashboard/client-manager/timesheets/${log.timesheet_id}`,
     };
   });
 

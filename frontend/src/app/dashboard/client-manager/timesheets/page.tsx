@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback, useRef } from 'react';
 import Link from 'next/link';
-import { format, parseISO } from 'date-fns';
+import { format, parseISO, differenceInHours } from 'date-fns';
 import { clientManagerApi, PaginatedTimesheetResponse, PendingQueueParams } from '@/lib/client-manager';
 import { Timesheet } from '@/lib/timesheets';
 import TimesheetStatusBadge from '@/components/timesheets/TimesheetStatusBadge';
@@ -57,6 +57,30 @@ export default function ClientManagerPendingQueue() {
   const [activeTab, setActiveTab]   = useState<FilterTab>('submitted');
   const [sort, setSort]             = useState<SortState>({ field: 'submitted_at', order: 'asc' });
   const [page, setPage]             = useState(1);
+
+  // ── "New" badge tracking (localStorage) ──────────────────────────────────
+  const SEEN_KEY = 'lorvish_seen_ts';
+  const [seenIds, setSeenIds] = useState<Set<string>>(() => {
+    try {
+      const raw = localStorage.getItem(SEEN_KEY);
+      return new Set(raw ? JSON.parse(raw) : []);
+    } catch { return new Set(); }
+  });
+
+  const markSeen = (id: string) => {
+    setSeenIds(prev => {
+      if (prev.has(id)) return prev;
+      const next = new Set(prev);
+      next.add(id);
+      try { localStorage.setItem(SEEN_KEY, JSON.stringify([...next])); } catch {}
+      return next;
+    });
+  };
+
+  const isNew = (ts: Timesheet) =>
+    !seenIds.has(ts.id) &&
+    !!ts.submitted_at &&
+    differenceInHours(new Date(), parseISO(ts.submitted_at)) < 24;
 
   const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -287,8 +311,13 @@ export default function ClientManagerPendingQueue() {
                         {(ts.candidate_name ?? 'C')[0]}
                       </span>
                       <div>
-                        <p className="text-sm font-semibold text-zinc-900">
+                        <p className="text-sm font-semibold text-zinc-900 flex items-center gap-2">
                           {ts.candidate_name ?? '—'}
+                          {isNew(ts) && (
+                            <span className="inline-flex items-center rounded-full bg-indigo-500 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-white animate-pulse">
+                              New
+                            </span>
+                          )}
                         </p>
                         {ts.candidate_email && (
                           <p className="text-xs text-zinc-400 truncate max-w-[180px]">
@@ -337,6 +366,7 @@ export default function ClientManagerPendingQueue() {
                   <td className="px-4 py-3.5 text-right">
                     <Link
                       href={`/dashboard/client-manager/timesheets/${ts.id}`}
+                      onClick={() => markSeen(ts.id)}
                       className="inline-flex items-center gap-1 rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-indigo-500 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
                     >
                       Review <span aria-hidden="true">→</span>

@@ -26,6 +26,13 @@ export interface DashboardStats {
   total_outstanding: number;
 }
 
+export interface FinanceTrendDataPoint {
+  date: string;
+  draft: number;
+  sent: number;
+  paid: number;
+}
+
 export const financeApi = {
   /** Finance queue: all client_approved timesheets */
   getPending: async (): Promise<Timesheet[]> => {
@@ -50,6 +57,11 @@ export const financeApi = {
   /** Fetch dashboard stats */
   getDashboardStats: async (): Promise<DashboardStats> => {
     return api.get<DashboardStats>('/finance/dashboard/stats');
+  },
+
+  /** Fetch trend data for invoices */
+  getTrendData: async (): Promise<{ data: FinanceTrendDataPoint[] }> => {
+    return api.get<{ data: FinanceTrendDataPoint[] }>('/finance/dashboard/trend');
   },
 };
 

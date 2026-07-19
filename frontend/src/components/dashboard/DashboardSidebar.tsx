@@ -2,9 +2,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { clearTokens } from '@/lib/session';
-import { apiLogout } from '@/lib/auth';
-import { PanelLeftClose, PanelLeftOpen, LogOut } from 'lucide-react';
+import { PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 
 export interface NavItem {
   label: string;
@@ -23,27 +21,20 @@ interface DashboardSidebarProps {
 export default function DashboardSidebar({ role, userName, navItems, collapsed, onCollapseToggle }: DashboardSidebarProps) {
   const pathname = usePathname();
 
-  const handleLogout = async () => {
-    try {
-      await apiLogout();
-    } catch (err) {
-      console.error('Logout error', err);
-    }
-    clearTokens();
-    window.location.href = '/login';
-  };
-
   return (
     <aside
-      className={`fixed inset-y-0 left-0 z-40 flex flex-col bg-white border-r border-zinc-200 shadow-sm transition-all duration-300 dark:bg-zinc-950 dark:border-zinc-800 ${
-        collapsed ? 'w-20' : 'w-56'
+      className={`print:hidden sticky top-0 h-screen shrink-0 z-40 flex flex-col bg-white border-r border-zinc-200 shadow-sm transition-all duration-300 dark:bg-zinc-950 dark:border-zinc-800 ${
+        collapsed ? 'w-20' : 'w-52'
       }`}
     >
       {/* Logo */}
       <div className={`flex h-16 shrink-0 items-center border-b border-zinc-100 dark:border-zinc-800 px-4 ${collapsed ? 'justify-center' : 'justify-start'}`}>
         <Link href="/dashboard" className="flex items-center gap-3">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-600 text-white font-bold text-lg shadow-sm shrink-0">L</div>
-          {!collapsed && <span className="text-lg font-bold tracking-tight text-zinc-900 dark:text-zinc-50">Lorvish</span>}
+          {collapsed ? (
+            <img src="/lorvish-logo.png" alt="Lorvish Logo" className="h-8 w-auto object-contain shrink-0" />
+          ) : (
+            <img src="/lorvish-logo.png" alt="Lorvish Logo" className="h-11 w-auto object-contain" />
+          )}
         </Link>
       </div>
 
@@ -105,15 +96,6 @@ export default function DashboardSidebar({ role, userName, navItems, collapsed, 
               <span>Collapse</span>
             </>
           )}
-        </button>
-
-        <button
-          onClick={handleLogout}
-          title={collapsed ? 'Log out' : undefined}
-          className={`flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-zinc-600 hover:bg-red-50 hover:text-red-700 dark:text-zinc-400 dark:hover:bg-red-500/10 dark:hover:text-red-400 transition-colors ${collapsed ? 'justify-center' : ''}`}
-        >
-          <LogOut size={18} className="shrink-0 text-zinc-400 group-hover:text-red-600 dark:text-zinc-500" />
-          {!collapsed && <span>Log out</span>}
         </button>
       </div>
     </aside>

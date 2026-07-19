@@ -20,20 +20,30 @@ export default function FinanceTimesheetReview() {
   const [rejectionReason, setRejectionReason] = useState('');
 
   // Approval form state
-  const [hourlyRate, setHourlyRate] = useState('150');
+  const [hourlyRate, setHourlyRate] = useState('');
   const [taxRate, setTaxRate] = useState('0');
   const [paymentTerms, setPaymentTerms] = useState('Net 30');
   const [financeNotes, setFinanceNotes] = useState('');
   
   // Billing form state
-  const [clientName, setClientName] = useState('Test Client Organization');
+  const [clientName, setClientName] = useState('');
   const [billingContact, setBillingContact] = useState('');
   const [billingAddress, setBillingAddress] = useState('');
   const [billingEmail, setBillingEmail] = useState('');
 
   useEffect(() => {
     financeApi.getTimesheetById(params.id as string)
-      .then(setTimesheet)
+      .then((ts) => {
+        setTimesheet(ts);
+        
+        // Auto-fill client details from the timesheet's manager info
+        if (ts.manager_name) {
+          setClientName(ts.manager_name);
+        } else if (ts.manager_email) {
+          const namePart = ts.manager_email.split('@')[0];
+          setClientName(namePart.charAt(0).toUpperCase() + namePart.slice(1));
+        }
+      })
       .catch((e: any) => setError(e.message || 'Failed to load timesheet.'))
       .finally(() => setLoading(false));
   }, [params.id]);
@@ -94,7 +104,7 @@ export default function FinanceTimesheetReview() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold text-zinc-900">Finance Review</h2>
-          <p className="mt-1 text-sm text-zinc-500">Candidate ID: {timesheet.candidate_id}</p>
+          <p className="mt-1 text-sm text-zinc-500">Candidate: <span className="font-semibold text-zinc-700">{timesheet.candidate_name || timesheet.candidate_id}</span></p>
         </div>
         <Link href="/dashboard/finance/timesheets" className="text-sm font-medium text-zinc-600 hover:text-zinc-900">
           ← Back to Queue
@@ -107,12 +117,12 @@ export default function FinanceTimesheetReview() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
         {/* Left: Timesheet Detail */}
         <div className="lg:col-span-2 space-y-4">
           {/* Period header */}
           <div className="bg-white shadow-sm ring-1 ring-zinc-200 rounded-xl overflow-hidden">
-            <div className="p-5 bg-zinc-50/60 border-b border-zinc-200 flex flex-wrap gap-6 justify-between items-center">
+            <div className="p-4 bg-zinc-50/60 border-b border-zinc-200 flex flex-wrap gap-4 justify-between items-center">
               <div>
                 <p className="text-xs font-medium text-zinc-500 uppercase tracking-wide">Period</p>
                 <p className="mt-0.5 text-lg font-bold text-zinc-900">
@@ -148,8 +158,8 @@ export default function FinanceTimesheetReview() {
             )}
 
             {/* Daily Entries */}
-            <div className="p-5">
-              <p className="text-sm font-semibold text-zinc-900 mb-4">Daily Work Log</p>
+            <div className="p-4">
+              <p className="text-sm font-semibold text-zinc-900 mb-3">Daily Work Log</p>
               <div className="rounded-lg ring-1 ring-zinc-200 overflow-hidden">
                 <table className="min-w-full divide-y divide-zinc-200">
                   <thead className="bg-zinc-900">
@@ -179,18 +189,18 @@ export default function FinanceTimesheetReview() {
         {/* Right: Approval Panel */}
         <div className="space-y-4">
           <div className="bg-white shadow-sm ring-1 ring-zinc-200 rounded-xl overflow-hidden">
-            <div className="p-4 bg-zinc-900">
-              <h3 className="text-sm font-semibold text-white">Invoice Configuration</h3>
-              <p className="text-xs text-zinc-400 mt-0.5">Configure billing details before approving</p>
+            <div className="p-3.5 bg-zinc-900">
+              <h3 className="text-[13px] font-bold text-white tracking-wide">Invoice Configuration</h3>
+              <p className="text-[11px] text-zinc-400 mt-0.5">Configure billing details before approving</p>
             </div>
-            <div className="p-5 space-y-4">
+            <div className="p-4 space-y-3.5">
               <div>
                 <label className="block text-xs font-semibold text-zinc-700 uppercase tracking-wide mb-1">Hourly Rate ($)</label>
                 <input
                   type="number"
                   value={hourlyRate}
                   onChange={e => setHourlyRate(e.target.value)}
-                  className="block w-full rounded-md border-0 py-1.5 text-zinc-900 shadow-sm ring-1 ring-inset ring-zinc-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm"
+                  className="block w-full rounded-md border-0 py-1 px-2.5 text-zinc-900 shadow-sm ring-1 ring-inset ring-zinc-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 text-xs"
                 />
               </div>
               <div>
@@ -202,7 +212,7 @@ export default function FinanceTimesheetReview() {
                   max="1"
                   value={taxRate}
                   onChange={e => setTaxRate(e.target.value)}
-                  className="block w-full rounded-md border-0 py-1.5 text-zinc-900 shadow-sm ring-1 ring-inset ring-zinc-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm"
+                  className="block w-full rounded-md border-0 py-1 px-2.5 text-zinc-900 shadow-sm ring-1 ring-inset ring-zinc-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 text-xs"
                 />
               </div>
               <div>
@@ -211,7 +221,7 @@ export default function FinanceTimesheetReview() {
                   type="text"
                   value={paymentTerms}
                   onChange={e => setPaymentTerms(e.target.value)}
-                  className="block w-full rounded-md border-0 py-1.5 text-zinc-900 shadow-sm ring-1 ring-inset ring-zinc-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm"
+                  className="block w-full rounded-md border-0 py-1 px-2.5 text-zinc-900 shadow-sm ring-1 ring-inset ring-zinc-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 text-xs"
                 />
               </div>
               <div>
@@ -220,7 +230,7 @@ export default function FinanceTimesheetReview() {
                   rows={2}
                   value={financeNotes}
                   onChange={e => setFinanceNotes(e.target.value)}
-                  className="block w-full rounded-md border-0 py-1.5 text-zinc-900 shadow-sm ring-1 ring-inset ring-zinc-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm"
+                  className="block w-full rounded-md border-0 py-1 px-2.5 text-zinc-900 shadow-sm ring-1 ring-inset ring-zinc-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 text-xs"
                   placeholder="Internal notes..."
                 />
               </div>
@@ -234,7 +244,7 @@ export default function FinanceTimesheetReview() {
                       type="text"
                       value={clientName}
                       onChange={e => setClientName(e.target.value)}
-                      className="block w-full rounded-md border-0 py-1.5 text-zinc-900 shadow-sm ring-1 ring-inset ring-zinc-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm"
+                      className="block w-full rounded-md border-0 py-1 px-2.5 text-zinc-900 shadow-sm ring-1 ring-inset ring-zinc-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 text-xs"
                       placeholder="e.g. Acme Corp"
                     />
                   </div>
@@ -244,7 +254,7 @@ export default function FinanceTimesheetReview() {
                       type="text"
                       value={billingContact}
                       onChange={e => setBillingContact(e.target.value)}
-                      className="block w-full rounded-md border-0 py-1.5 text-zinc-900 shadow-sm ring-1 ring-inset ring-zinc-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm"
+                      className="block w-full rounded-md border-0 py-1 px-2.5 text-zinc-900 shadow-sm ring-1 ring-inset ring-zinc-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 text-xs"
                       placeholder="e.g. Jane Doe"
                     />
                   </div>
@@ -254,7 +264,7 @@ export default function FinanceTimesheetReview() {
                       type="email"
                       value={billingEmail}
                       onChange={e => setBillingEmail(e.target.value)}
-                      className="block w-full rounded-md border-0 py-1.5 text-zinc-900 shadow-sm ring-1 ring-inset ring-zinc-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm"
+                      className="block w-full rounded-md border-0 py-1 px-2.5 text-zinc-900 shadow-sm ring-1 ring-inset ring-zinc-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 text-xs"
                       placeholder="e.g. billing@acme.com"
                     />
                   </div>
@@ -264,7 +274,7 @@ export default function FinanceTimesheetReview() {
                       rows={2}
                       value={billingAddress}
                       onChange={e => setBillingAddress(e.target.value)}
-                      className="block w-full rounded-md border-0 py-1.5 text-zinc-900 shadow-sm ring-1 ring-inset ring-zinc-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm"
+                      className="block w-full rounded-md border-0 py-1 px-2.5 text-zinc-900 shadow-sm ring-1 ring-inset ring-zinc-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 text-xs"
                       placeholder="e.g. 123 Business Rd..."
                     />
                   </div>
@@ -280,7 +290,7 @@ export default function FinanceTimesheetReview() {
               <div className="p-4 space-y-4 text-sm">
                 <div>
                   <p className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-1">Billed To:</p>
-                  <p className="font-bold text-zinc-900">{clientName || '—'}</p>
+                  <p className="font-bold text-zinc-900 capitalize">{clientName || '—'}</p>
                   {billingContact && <p className="text-zinc-600 text-xs mt-0.5">{billingContact}</p>}
                   {billingAddress && <p className="text-zinc-600 text-xs mt-0.5 whitespace-pre-wrap">{billingAddress}</p>}
                   {billingEmail && <p className="text-zinc-600 text-xs mt-0.5">{billingEmail}</p>}
@@ -303,12 +313,12 @@ export default function FinanceTimesheetReview() {
               </div>
             </div>
 
-            <div className="px-5 pb-5 space-y-2">
+            <div className="p-4 bg-zinc-50 border-t border-zinc-200 space-y-2">
               <button
                 type="button"
                 disabled={processing || rate <= 0}
                 onClick={handleApprove}
-                className="w-full rounded-md bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 disabled:opacity-50"
+                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
               >
                 {processing ? 'Generating Invoice...' : '✓ Approve & Generate Invoice'}
               </button>

@@ -59,11 +59,11 @@ export default function CandidateDashboard() {
     const rejected = timesheets.filter(t => t.status === 'client_rejected' || t.status === 'finance_rejected').length;
 
     return [
-      { title: 'Draft', value: draft.toString(), icon: <FileEdit size={20} className="text-indigo-600" />, bg: 'bg-indigo-50 dark:bg-indigo-900/20', trend: <Minus size={14} className="mr-1 text-zinc-400" />, trendText: 'vs last 30 days' },
-      { title: 'Submitted', value: submitted.toString(), icon: <Send size={20} className="text-blue-500" />, bg: 'bg-blue-50 dark:bg-blue-900/20', trend: <Minus size={14} className="mr-1 text-zinc-400" />, trendText: 'vs last 30 days' },
-      { title: 'Shared', value: shared.toString(), icon: <Users size={20} className="text-orange-500" />, bg: 'bg-orange-50 dark:bg-orange-900/20', trend: <TrendingUp size={14} className="mr-1 text-emerald-500" />, trendText: '100% vs last 30 days', trendClass: 'text-emerald-600 dark:text-emerald-400' },
-      { title: 'Approved', value: approved.toString(), icon: <CheckCircle2 size={20} className="text-emerald-500" />, bg: 'bg-emerald-50 dark:bg-emerald-900/20', trend: <TrendingUp size={14} className="mr-1 text-emerald-500" />, trendText: '100% vs last 30 days', trendClass: 'text-emerald-600 dark:text-emerald-400' },
-      { title: 'Rejected', value: rejected.toString(), icon: <XCircle size={20} className="text-red-500" />, bg: 'bg-red-50 dark:bg-red-900/20', trend: <Minus size={14} className="mr-1 text-zinc-400" />, trendText: 'vs last 30 days' },
+      { title: 'Draft', value: draft.toString(), icon: <FileEdit size={18} strokeWidth={1.75} className="text-indigo-500" />, accent: 'bg-indigo-500', trend: <Minus size={14} className="mr-1 text-zinc-400" />, trendText: 'vs last 30 days' },
+      { title: 'Submitted', value: submitted.toString(), icon: <Send size={18} strokeWidth={1.75} className="text-blue-500" />, accent: 'bg-blue-500', trend: <Minus size={14} className="mr-1 text-zinc-400" />, trendText: 'vs last 30 days' },
+      { title: 'Shared', value: shared.toString(), icon: <Users size={18} strokeWidth={1.75} className="text-orange-500" />, accent: 'bg-orange-500', trend: <TrendingUp size={14} className="mr-1 text-emerald-500" />, trendText: '100% vs last 30 days', trendClass: 'text-emerald-600 dark:text-emerald-400' },
+      { title: 'Approved', value: approved.toString(), icon: <CheckCircle2 size={18} strokeWidth={1.75} className="text-emerald-500" />, accent: 'bg-emerald-500', trend: <TrendingUp size={14} className="mr-1 text-emerald-500" />, trendText: '100% vs last 30 days', trendClass: 'text-emerald-600 dark:text-emerald-400' },
+      { title: 'Rejected', value: rejected.toString(), icon: <XCircle size={18} strokeWidth={1.75} className="text-red-500" />, accent: 'bg-red-500', trend: <Minus size={14} className="mr-1 text-zinc-400" />, trendText: 'vs last 30 days' },
     ];
   }, [timesheets]);
 
@@ -137,22 +137,22 @@ export default function CandidateDashboard() {
           {/* Stats row */}
           <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
             {stats.map((s, idx) => (
-              <Card key={idx} className="relative overflow-hidden group hover:border-zinc-300 transition-colors">
+              <Card key={idx} className="relative overflow-hidden group border-zinc-200/60 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.04)] hover:shadow-[0_8px_24px_-4px_rgba(0,0,0,0.08)] hover:-translate-y-0.5 transition-all duration-300">
                 {/* Subtle top accent line */}
-                <div className={`absolute top-0 left-0 w-full h-[3px] ${s.bg.split(' ')[0].replace('bg-', 'bg-').replace('50', '500')}`} />
-                <CardContent className="p-5">
-                  <div className="flex items-center justify-between">
-                    <p className="text-sm font-medium text-zinc-500 dark:text-zinc-400">{s.title}</p>
-                    <div className={`flex h-8 w-8 items-center justify-center rounded-md ${s.bg}`}>
+                <div className={`absolute top-0 left-0 w-full h-[3px] ${s.accent}`} />
+                <CardContent className="p-4 flex flex-col justify-between h-full">
+                  <div className="flex items-center gap-2 mb-3 mt-1">
+                    <div className="flex items-center justify-center flex-shrink-0">
                       {s.icon}
                     </div>
+                    <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500 truncate">{s.title}</p>
                   </div>
-                  <div className="mt-4">
-                    <h4 className="text-3xl font-black text-zinc-900 dark:text-zinc-50 tracking-tight">{s.value}</h4>
-                  </div>
-                  <div className={`mt-3 flex items-center text-xs font-medium ${s.trendClass || 'text-zinc-500 dark:text-zinc-400'}`}>
-                    {s.trend}
-                    <span className="ml-1.5 truncate text-zinc-500">{s.trendText}</span>
+                  <div>
+                    <h4 className="text-2xl font-black text-zinc-900 dark:text-zinc-50 tracking-tight leading-none">{s.value}</h4>
+                    <div className={`mt-1.5 flex items-center text-[11px] font-medium ${s.trendClass || 'text-zinc-400 dark:text-zinc-500'}`}>
+                      {s.trend}
+                      <span className="truncate text-zinc-500">{s.trendText}</span>
+                    </div>
                   </div>
                 </CardContent>
               </Card>

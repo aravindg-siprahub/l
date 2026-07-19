@@ -20,6 +20,15 @@ def get_dashboard_stats(
     return finance_service.get_finance_dashboard_stats(db)
 
 
+@router.get("/dashboard/trend")
+def get_dashboard_trend(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Trend data for Finance dashboard (invoices over time)."""
+    return finance_service.get_finance_trend(db)
+
+
 
 @router.get("/pending", response_model=list[TimesheetOut])
 def get_finance_pending(
@@ -27,7 +36,8 @@ def get_finance_pending(
     current_user: User = Depends(get_current_user),
 ):
     """Finance queue: all client_approved timesheets awaiting Finance review."""
-    return finance_service.get_finance_pending_timesheets(db)
+    timesheets = finance_service.get_finance_pending_timesheets(db)
+    return [TimesheetOut.from_orm_with_candidate(ts) for ts in timesheets]
 
 
 @router.get("/timesheets/{timesheet_id}", response_model=TimesheetOut)
@@ -36,8 +46,9 @@ def get_finance_timesheet(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """Retrieve a specific timesheet for finance review."""
-    return finance_service.get_timesheet_for_finance(db, timesheet_id)
+    """Retrieve a specific timesheet for Finance review."""
+    timesheet = finance_service.get_timesheet_for_finance(db, timesheet_id)
+    return TimesheetOut.from_orm_with_candidate(timesheet)
 
 
 @router.post("/{timesheet_id}/approve", response_model=InvoiceOut, status_code=status.HTTP_201_CREATED)

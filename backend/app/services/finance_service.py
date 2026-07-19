@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 
 from app.core.db.models import Invoice, Timesheet, TimesheetStatus
 from app.services.invoice_engine import InvoiceConfig, create_invoice
+from sqlalchemy.orm import joinedload
 
 
 def get_finance_dashboard_stats(db: Session) -> dict:
@@ -52,10 +53,54 @@ def get_finance_dashboard_stats(db: Session) -> dict:
     }
 
 
+def get_finance_trend(db: Session) -> dict:
+    """Return trend data for finance dashboard over the last 7 days."""
+    from datetime import timedelta
+    from app.core.db.models import InvoiceStatus
+    now = datetime.now(timezone.utc)
+    seven_days_ago = now - timedelta(days=7)
+    
+    # We will track invoices created or updated in the last 7 days
+    stmt = select(Invoice).where(
+        (Invoice.created_at >= seven_days_ago) |
+        (Invoice.updated_at >= seven_days_ago)
+    )
+    invoices = db.scalars(stmt).all()
+    
+    trend_map = {}
+    for i in range(7):
+        d = now - timedelta(days=6 - i)
+        date_str = d.strftime("%b ") + str(d.day)
+        trend_map[date_str] = {"draft": 0, "sent": 0, "paid": 0}
+        
+    for inv in invoices:
+        action_time = inv.updated_at or inv.created_at
+        if action_time >= seven_days_ago:
+            d_str = action_time.strftime("%b ") + str(action_time.day)
+            if d_str in trend_map:
+                if inv.status in (InvoiceStatus.draft, InvoiceStatus.ready):
+                    trend_map[d_str]["draft"] += 1
+                elif inv.status in (InvoiceStatus.sent, InvoiceStatus.payment_pending):
+                    trend_map[d_str]["sent"] += 1
+                elif inv.status == InvoiceStatus.paid:
+                    trend_map[d_str]["paid"] += 1
+                    
+    result = []
+    for date_str, counts in trend_map.items():
+        result.append({
+            "date": date_str,
+            "draft": counts["draft"],
+            "sent": counts["sent"],
+            "paid": counts["paid"],
+        })
+    return {"data": result}
+
+
 def get_finance_pending_timesheets(db: Session) -> list[Timesheet]:
     """Return all timesheets awaiting Finance team review (client_approved)."""
     stmt = (
         select(Timesheet)
+        .options(joinedload(Timesheet.candidate))
         .where(Timesheet.status == TimesheetStatus.client_approved)
         .order_by(Timesheet.submitted_at.asc())
     )
@@ -64,7 +109,8 @@ def get_finance_pending_timesheets(db: Session) -> list[Timesheet]:
 
 def get_timesheet_for_finance(db: Session, timesheet_id: uuid.UUID) -> Timesheet:
     """Retrieve a timesheet for Finance review (no candidate restriction)."""
-    timesheet = db.get(Timesheet, timesheet_id)
+    stmt = select(Timesheet).options(joinedload(Timesheet.candidate)).where(Timesheet.id == timesheet_id)
+    timesheet = db.scalar(stmt)
     if not timesheet:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

@@ -448,6 +448,43 @@ def get_client_manager_trend(db: Session, manager_email: str) -> dict:
         
     return {"data": result}
 
+def get_client_manager_recent_activity(db: Session, manager_email: str) -> list[dict]:
+    # Fetch top 10 most recent audit logs for timesheets managed by this client manager
+    stmt = (
+        select(TimesheetAuditLog, Timesheet)
+        .join(Timesheet, Timesheet.id == TimesheetAuditLog.timesheet_id)
+        .where(Timesheet.manager_email == manager_email)
+        .order_by(TimesheetAuditLog.created_at.desc())
+        .limit(10)
+    )
+    results = db.execute(stmt).all()
+    
+    activity_list = []
+    for log, ts in results:
+        # Get candidate name
+        candidate = db.scalar(select(User).where(User.id == ts.candidate_id))
+        candidate_name = candidate.full_name if candidate else "Unknown"
+        
+        # Get actor name
+        actor_name = None
+        if log.actor_id:
+            actor = db.scalar(select(User).where(User.id == log.actor_id))
+            if actor:
+                actor_name = actor.full_name
+                
+        activity_list.append({
+            "id": log.id,
+            "action": log.action.value,
+            "actor_name": actor_name,
+            "timesheet_id": ts.id,
+            "period_start_date": ts.period_start_date,
+            "period_end_date": ts.period_end_date,
+            "total_hours": ts.total_hours,
+            "created_at": log.created_at,
+            "candidate_name": candidate_name
+        })
+        
+    return activity_list
 def get_timesheet_audit_log(
     db: Session,
     timesheet_id: uuid.UUID,

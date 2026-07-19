@@ -1,8 +1,9 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import DashboardSidebar, { NavItem } from '@/components/dashboard/DashboardSidebar';
-import { apiMe, UserOut } from '@/lib/auth';
+import { apiMe, UserOut, apiLogout } from '@/lib/auth';
+import { clearTokens } from '@/lib/session';
 import { useRouter } from 'next/navigation';
 import { 
   LayoutDashboard, 
@@ -18,7 +19,9 @@ import {
   CreditCard,
   PlusCircle,
   Bell,
-  ChevronDown
+  ChevronDown,
+  LogOut,
+  User
 } from 'lucide-react';
 
 const roleNavItems: Record<string, NavItem[]> = {
@@ -26,20 +29,17 @@ const roleNavItems: Record<string, NavItem[]> = {
     { label: 'Dashboard', href: '/dashboard/admin', icon: <LayoutDashboard size={20} /> },
     { label: 'Users', href: '/dashboard/admin/users', icon: <Users size={20} /> },
     { label: 'Audit Logs', href: '/dashboard/admin/audit', icon: <ClipboardList size={20} /> },
-    { label: 'Profile', href: '/dashboard/admin/profile', icon: <UserCircle size={20} /> },
   ],
   recruiter: [
     { label: 'Dashboard', href: '/dashboard/recruiter', icon: <LayoutDashboard size={20} /> },
     { label: 'Candidates', href: '/dashboard/recruiter/candidates', icon: <UserSquare2 size={20} /> },
     { label: 'Timesheets', href: '/dashboard/recruiter/timesheets', icon: <CalendarDays size={20} /> },
     { label: 'Reports', href: '/dashboard/recruiter/reports', icon: <BarChart3 size={20} /> },
-    { label: 'Profile', href: '/dashboard/recruiter/profile', icon: <UserCircle size={20} /> },
   ],
   client_manager: [
     { label: 'Dashboard', href: '/dashboard/client-manager', icon: <LayoutDashboard size={20} /> },
     { label: 'Pending Approvals', href: '/dashboard/client-manager/timesheets', icon: <CheckCircle2 size={20} /> },
     { label: 'Approval History', href: '/dashboard/client-manager/history', icon: <ClipboardList size={20} /> },
-    { label: 'Profile', href: '/dashboard/client-manager/profile', icon: <UserCircle size={20} /> },
   ],
   finance_team: [
     { label: 'Dashboard', href: '/dashboard/finance', icon: <LayoutDashboard size={20} /> },
@@ -47,13 +47,11 @@ const roleNavItems: Record<string, NavItem[]> = {
     { label: 'Invoice Queue', href: '/dashboard/finance/invoices', icon: <FileText size={20} /> },
     { label: 'Billing Summary', href: '/dashboard/finance/billing', icon: <CreditCard size={20} /> },
     { label: 'Reports', href: '/dashboard/finance/reports', icon: <BarChart3 size={20} /> },
-    { label: 'Profile', href: '/dashboard/finance/profile', icon: <UserCircle size={20} /> },
   ],
   candidate: [
     { label: 'Dashboard', href: '/dashboard/candidate', icon: <LayoutDashboard size={20} /> },
     { label: 'My Timesheets', href: '/dashboard/candidate/timesheets', icon: <CalendarDays size={20} /> },
     { label: 'Submit Timesheet', href: '/dashboard/candidate/timesheets/new', icon: <PlusCircle size={20} /> },
-    { label: 'Profile', href: '/dashboard/candidate/profile', icon: <UserCircle size={20} /> },
   ],
 };
 
@@ -61,7 +59,19 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [user, setUser] = useState<UserOut | null>(null);
   const [loading, setLoading] = useState(true);
   const [collapsed, setCollapsed] = useState(false);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -97,6 +107,20 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const role = user.role;
   const userName = user.full_name;
   const navItems = roleNavItems[role] ?? [];
+  const profileHref = 
+    role === 'client_manager' ? '/dashboard/client-manager/profile' : 
+    role === 'finance_team' ? '/dashboard/finance/profile' : 
+    `/dashboard/${role.replace('_', '-')}/profile`;
+
+  const handleLogout = async () => {
+    try {
+      await apiLogout();
+    } catch (err) {
+      console.error('Logout error', err);
+    }
+    clearTokens();
+    window.location.href = '/login';
+  };
 
   return (
     <div className="flex min-h-screen bg-zinc-50 dark:bg-zinc-900 font-sans">
@@ -107,8 +131,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         collapsed={collapsed}
         onCollapseToggle={() => setCollapsed(!collapsed)}
       />
-      <div className={`flex-1 flex flex-col min-h-screen transition-all duration-300 ${collapsed ? 'ml-20' : 'ml-56'}`}>
-        <header className="sticky top-0 z-30 h-16 flex items-center justify-between px-8 bg-zinc-50 dark:bg-zinc-900 border-none">
+      <div className="print:ml-0 flex-1 flex flex-col min-h-screen transition-all duration-300 overflow-hidden">
+        <header className="print:hidden sticky top-0 z-30 h-16 flex items-center justify-between px-8 bg-zinc-50 dark:bg-zinc-900 border-none">
           <div className="flex-1"></div>
           
           {/* Global Search Mock */}
@@ -134,19 +158,50 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <span className="absolute top-1.5 right-2 h-2.5 w-2.5 rounded-full bg-indigo-600 border-2 border-zinc-50 dark:border-zinc-900" />
             </button>
             
-            <div className="flex items-center gap-2 cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800 p-1.5 rounded-lg transition-colors">
-              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-indigo-600 text-white font-semibold text-sm shadow-sm">
-                {userName.charAt(0).toUpperCase()}
+            <div className="relative" ref={dropdownRef}>
+              <div 
+                className="flex items-center gap-2 cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800 p-1.5 rounded-lg transition-colors"
+                onClick={() => setDropdownOpen(!dropdownOpen)}
+              >
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-indigo-600 text-white font-semibold text-sm shadow-sm">
+                  {userName.charAt(0).toUpperCase()}
+                </div>
+                <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300 hidden sm:block">{userName}</span>
+                <ChevronDown size={16} className={`text-zinc-400 transition-transform ${dropdownOpen ? 'rotate-180' : ''}`} />
               </div>
-              <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300 hidden sm:block">{userName}</span>
-              <ChevronDown size={16} className="text-zinc-400" />
+              
+              {dropdownOpen && (
+                <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-zinc-950 rounded-xl shadow-lg border border-zinc-200/60 dark:border-zinc-800/60 py-1.5 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
+                  <div className="px-3 py-2 border-b border-zinc-100 dark:border-zinc-800/60 mb-1">
+                    <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 truncate">{userName}</p>
+                    <p className="text-xs text-zinc-500 capitalize">{role.replace('_', ' ')}</p>
+                  </div>
+                  <button
+                    onClick={() => {
+                      setDropdownOpen(false);
+                      router.push(profileHref);
+                    }}
+                    className="w-full flex items-center gap-2 px-3 py-2 text-sm text-zinc-600 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800/50 transition-colors"
+                  >
+                    <User size={16} />
+                    Profile
+                  </button>
+                  <button
+                    onClick={handleLogout}
+                    className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors mt-1"
+                  >
+                    <LogOut size={16} />
+                    Log out
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </header>
-        <main className="flex-1 p-8 overflow-auto">
+        <main className="print:p-0 print:m-0 flex-1 p-8 overflow-auto">
           {children}
           
-          <footer className="mt-16 pt-8 border-t border-zinc-200/60 dark:border-zinc-800/60 flex flex-col sm:flex-row items-center justify-between text-xs text-zinc-500 dark:text-zinc-400 gap-4">
+          <footer className="print:hidden mt-16 pt-8 border-t border-zinc-200/60 dark:border-zinc-800/60 flex flex-col sm:flex-row items-center justify-between text-xs text-zinc-500 dark:text-zinc-400 gap-4">
             <div>
               &copy; 2026 Lorvish Technologies. All rights reserved.
             </div>

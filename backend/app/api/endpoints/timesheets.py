@@ -10,6 +10,7 @@ from app.schemas.timesheet import (
     TimesheetCreate, TimesheetUpdate, TimesheetOut,
     TimesheetClientApprove, TimesheetClientReject, TimesheetSharePayload,
     TimesheetAuditLogOut, PaginatedTimesheetResponse, ClientManagerStatsOut, TrendDataOut,
+    RecentActivityOut,
 )
 from app.services import timesheet_service
 
@@ -50,6 +51,13 @@ def get_client_manager_trend(
     """Trend data for the past 7 days for the authenticated client manager."""
     return timesheet_service.get_client_manager_trend(db, current_user.email)
 
+@router.get("/client-activity", response_model=list[RecentActivityOut])
+def get_client_manager_recent_activity(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_client_manager),
+):
+    """Recent audit log activity across all timesheets for the authenticated client manager."""
+    return timesheet_service.get_client_manager_recent_activity(db, current_user.email)
 
 
 @router.get("/client-pending/", response_model=PaginatedTimesheetResponse)

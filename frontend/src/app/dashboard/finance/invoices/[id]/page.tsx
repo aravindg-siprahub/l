@@ -180,13 +180,7 @@ export default function InvoiceTemplate() {
           <div className="relative z-10 flex items-start justify-between px-10 pt-8 pb-6">
             {/* Logo */}
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-indigo-600 flex items-center justify-center">
-                <span className="text-white font-black text-sm tracking-tight">L</span>
-              </div>
-              <div>
-                <p className="text-lg font-black text-zinc-900 tracking-tight leading-none">LORVISH</p>
-                <p className="text-xs text-zinc-500 leading-none mt-0.5">Global Staffing Solutions</p>
-              </div>
+              <img src="/lorvish-logo.png" alt="Lorvish Logo" className="h-14 w-auto object-contain" />
             </div>
 
             {/* INVOICE title + number */}
@@ -225,7 +219,7 @@ export default function InvoiceTemplate() {
         <div className="px-10 mb-6">
           <table className="w-full text-sm">
             <thead>
-              <tr className="bg-zinc-900 text-white">
+              <tr className="bg-zinc-50 text-zinc-600 border-y border-zinc-200">
                 <th className="px-4 py-3 text-left font-semibold text-xs uppercase tracking-wider w-1/2">Product / Description</th>
                 <th className="px-4 py-3 text-right font-semibold text-xs uppercase tracking-wider">Rate</th>
                 <th className="px-4 py-3 text-right font-semibold text-xs uppercase tracking-wider">Qty (hrs)</th>
@@ -270,7 +264,7 @@ export default function InvoiceTemplate() {
               <span className="font-semibold uppercase tracking-wide">Tax ({(invoice.tax_rate * 100).toFixed(0)}%)</span>
               <span>${taxAmt.toFixed(2)}</span>
             </div>
-            <div className="flex justify-between items-center bg-zinc-900 text-white rounded px-3 py-2">
+            <div className="flex justify-between items-center bg-indigo-50 text-indigo-900 rounded px-3 py-2 border border-indigo-100 mt-2">
               <span className="font-bold uppercase tracking-wide text-sm">Total</span>
               <span className="font-black text-lg">${total.toFixed(2)}</span>
             </div>
@@ -286,21 +280,25 @@ export default function InvoiceTemplate() {
         </div>
 
         {/* ══ PAYMENT INFO BAND ══ */}
-        <div className="bg-indigo-600 px-10 py-5 mx-0">
-          <p className="text-xs font-black text-white uppercase tracking-widest mb-2">Payment Info:</p>
-          <div className="grid grid-cols-2 gap-4 text-sm">
-            <div>
-              <p className="text-indigo-200 text-xs uppercase tracking-wider">Account Name:</p>
-              <p className="text-white font-semibold">Lorvish Global Staffing Pvt Ltd</p>
+        <div className="px-10 mb-6">
+          <div className="bg-zinc-50 border border-zinc-200 rounded-lg p-5">
+            <p className="text-xs font-black text-zinc-800 uppercase tracking-widest mb-3">Payment Info:</p>
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div>
+                <p className="text-zinc-500 text-xs uppercase tracking-wider">Account Name:</p>
+                <p className="text-zinc-900 font-semibold mt-0.5">Lorvish Global Staffing Pvt Ltd</p>
+              </div>
+              <div>
+                <p className="text-zinc-500 text-xs uppercase tracking-wider">Bank Name:</p>
+                <p className="text-zinc-900 font-semibold mt-0.5">HDFC Bank / SWIFT: HDFCINBB</p>
+              </div>
             </div>
-            <div>
-              <p className="text-indigo-200 text-xs uppercase tracking-wider">Bank Name:</p>
-              <p className="text-white font-semibold">HDFC Bank / SWIFT: HDFCINBB</p>
-            </div>
+            {invoice.notes && (
+              <div className="mt-4 pt-4 border-t border-zinc-200">
+                <p className="text-zinc-600 text-xs">{invoice.notes}</p>
+              </div>
+            )}
           </div>
-          {invoice.notes && (
-            <p className="mt-3 text-indigo-100 text-xs">{invoice.notes}</p>
-          )}
         </div>
 
         {/* ══ TERMS & CONDITIONS ══ */}
@@ -327,7 +325,7 @@ export default function InvoiceTemplate() {
             </span>
             <span className="flex items-center gap-1.5">
               <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-              Bangalore, India
+              USA North Virginia
             </span>
           </div>
         </div>

@@ -49,6 +49,18 @@ export interface TrendDataOut {
   data: TrendDataPoint[];
 }
 
+export interface RecentActivityOut {
+  id: string;
+  action: string;
+  actor_name: string | null;
+  timesheet_id: string;
+  period_start_date: string;
+  period_end_date: string;
+  total_hours: number;
+  created_at: string;
+  candidate_name: string | null;
+}
+
 // ── Query param types ─────────────────────────────────────────────────────────
 
 export interface PendingQueueParams {
@@ -106,6 +118,10 @@ export const clientManagerApi = {
 
   getTrendData: async (): Promise<TrendDataOut> => {
     return api.get<TrendDataOut>('/timesheets/client-trend');
+  },
+
+  getRecentActivity: async (): Promise<RecentActivityOut[]> => {
+    return api.get<RecentActivityOut[]>('/timesheets/client-activity');
   },
 
   /** Audit log for a specific timesheet (assigned manager only). */

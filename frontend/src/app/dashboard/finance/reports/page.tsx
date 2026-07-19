@@ -1,10 +1,11 @@
-﻿'use client';
+'use client';
 
 import { useEffect, useState, useMemo } from 'react';
 import Link from 'next/link';
 import { invoicesApi, InvoiceListItem } from '@/lib/invoices';
 import { financeApi, DashboardStats } from '@/lib/finance';
 import { format, parseISO, startOfMonth, isSameMonth, subMonths, differenceInDays } from 'date-fns';
+import { DollarSign, AlertCircle, File, TrendingUp, BarChart2, Edit3, CheckCircle2, Send, CreditCard, Search, Banknote, Hourglass, FileText, Zap } from 'lucide-react';
 
 // ---- Utilities ---------------------------------------------------------------
 
@@ -65,21 +66,23 @@ function HBar({ label, value, max, color, amount }: { label: string; value: numb
 // ---- Metric card -------------------------------------------------------------
 
 function MetricCard({ icon, title, value, sub, delta, deltaPos, accent }:
-  { icon: string; title: string; value: string; sub?: string; delta?: string; deltaPos?: boolean; accent: string }) {
+  { icon: React.ReactNode; title: string; value: string; sub?: string; delta?: string; deltaPos?: boolean; accent: string }) {
   return (
-    <div className={`bg-white rounded-2xl border border-zinc-200 shadow-sm p-5 flex flex-col gap-2 hover:shadow-md transition-shadow`}>
-      <div className="flex items-start justify-between">
-        <div className={`flex h-10 w-10 items-center justify-center rounded-xl ring-1 text-xl ${accent}`}>{icon}</div>
+    <div className="bg-white rounded-xl border border-zinc-200/60 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.04)] p-4 flex flex-col justify-between hover:shadow-[0_8px_24px_-4px_rgba(0,0,0,0.08)] hover:-translate-y-0.5 transition-all duration-300">
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2 overflow-hidden pr-2">
+          <div className={`flex-shrink-0 ${accent}`}>{icon}</div>
+          <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500 truncate">{title}</p>
+        </div>
         {delta && (
-          <span className={`text-xs font-semibold rounded-full px-2 py-0.5 ${deltaPos ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'}`}>
+          <span className={`text-[10px] font-bold tracking-wide rounded-full px-2 py-0.5 ${deltaPos ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'}`}>
             {deltaPos ? '↑' : '↓'} {delta}
           </span>
         )}
       </div>
       <div>
-        <p className="text-xs font-medium text-zinc-500 mt-1">{title}</p>
-        <p className="text-2xl font-bold text-zinc-900 leading-tight">{value}</p>
-        {sub && <p className="text-xs text-zinc-400 mt-0.5">{sub}</p>}
+        <p className="text-2xl font-black tracking-tight text-zinc-900 leading-tight">{value}</p>
+        {sub && <p className="mt-0.5 text-xs text-zinc-400 font-medium">{sub}</p>}
       </div>
     </div>
   );
@@ -225,11 +228,11 @@ export default function FinanceReportsPage() {
     </div>
   );
 
-  const tabs: { id: Tab; label: string; icon: string }[] = [
-    { id: 'overview', label: 'Overview', icon: '📊' },
-    { id: 'revenue', label: 'Revenue', icon: '💰' },
-    { id: 'invoices', label: 'Invoices', icon: '📄' },
-    { id: 'efficiency', label: 'Efficiency', icon: '⚡' },
+  const tabs: { id: Tab; label: string; icon: React.ReactNode }[] = [
+    { id: 'overview', label: 'Overview', icon: <BarChart2 size={16} /> },
+    { id: 'revenue', label: 'Revenue', icon: <Banknote size={16} /> },
+    { id: 'invoices', label: 'Invoices', icon: <FileText size={16} /> },
+    { id: 'efficiency', label: 'Efficiency', icon: <Zap size={16} /> },
   ];
 
   return (
@@ -237,7 +240,7 @@ export default function FinanceReportsPage() {
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h2 className="text-2xl font-bold text-zinc-900">Finance Reports</h2>
+          <h2 className="text-2xl font-bold tracking-tight text-zinc-900">Finance Reports</h2>
           <p className="mt-1 text-sm text-zinc-500">Analytics, trends, and performance metrics across all invoices</p>
         </div>
         <div className="flex items-center gap-3">
@@ -280,25 +283,25 @@ export default function FinanceReportsPage() {
         <div className="space-y-6">
           {/* Top KPIs */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <MetricCard icon="💰" title="Total Revenue (Paid)" value={fmt(report.totalCollected)}
+            <MetricCard icon={<DollarSign size={18} strokeWidth={1.75} />} title="Total Revenue (Paid)" value={fmt(report.totalCollected)}
               sub={`of ${fmt(report.totalIssued)} total issued`}
               delta={report.revenueGrowth ? `${Math.abs(Number(report.revenueGrowth))}% MoM` : undefined}
               deltaPos={Number(report.revenueGrowth) >= 0}
-              accent="bg-emerald-50 text-emerald-600 ring-emerald-200" />
-            <MetricCard icon="⏳" title="Outstanding Balance" value={fmt(report.totalOutstanding)}
+              accent="text-emerald-500" />
+            <MetricCard icon={<AlertCircle size={18} strokeWidth={1.75} />} title="Outstanding Balance" value={fmt(report.totalOutstanding)}
               sub="Sent + payment pending invoices"
-              accent="bg-orange-50 text-orange-600 ring-orange-200" />
-            <MetricCard icon="📄" title="Total Invoices" value={String(invoices.length)}
+              accent="text-orange-500" />
+            <MetricCard icon={<File size={18} strokeWidth={1.75} />} title="Total Invoices" value={String(invoices.length)}
               sub={`${stats?.paid_invoices ?? 0} paid · ${stats?.draft_invoices ?? 0} draft`}
-              accent="bg-indigo-50 text-indigo-600 ring-indigo-200" />
-            <MetricCard icon="⚡" title="Collection Rate" value={`${report.collectionRate.toFixed(1)}%`}
+              accent="text-indigo-500" />
+            <MetricCard icon={<TrendingUp size={18} strokeWidth={1.75} />} title="Collection Rate" value={`${report.collectionRate.toFixed(1)}%`}
               sub="Paid / total issued"
-              accent="bg-violet-50 text-violet-600 ring-violet-200" />
+              accent="text-violet-500" />
           </div>
 
           {/* Revenue trend + status */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2 bg-white rounded-2xl border border-zinc-200 shadow-sm p-6">
+            <div className="lg:col-span-2 bg-white rounded-2xl border border-zinc-200/80 shadow-[0_2px_12px_-4px_rgba(0,0,0,0.05)] p-6">
               <div className="flex items-center justify-between mb-5">
                 <div>
                   <h3 className="text-sm font-semibold text-zinc-900">Revenue Trend</h3>
@@ -312,7 +315,7 @@ export default function FinanceReportsPage() {
               }
             </div>
 
-            <div className="bg-white rounded-2xl border border-zinc-200 shadow-sm p-6">
+            <div className="bg-white rounded-2xl border border-zinc-200/80 shadow-[0_2px_12px_-4px_rgba(0,0,0,0.05)] p-6">
               <h3 className="text-sm font-semibold text-zinc-900 mb-4">Status Distribution</h3>
               <div className="space-y-3">
                 {report.statusDist.length === 0
@@ -334,16 +337,16 @@ export default function FinanceReportsPage() {
 
           {/* Secondary metrics */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div className="bg-white rounded-2xl border border-zinc-200 shadow-sm p-5">
+            <div className="bg-white rounded-2xl border border-zinc-200/80 shadow-[0_2px_12px_-4px_rgba(0,0,0,0.05)] p-5">
               <p className="text-xs text-zinc-500 font-medium">Avg Invoice Value</p>
               <p className="text-2xl font-bold text-zinc-900 mt-1">{fmtFull(report.avgInvoiceValue)}</p>
             </div>
-            <div className="bg-white rounded-2xl border border-zinc-200 shadow-sm p-5">
+            <div className="bg-white rounded-2xl border border-zinc-200/80 shadow-[0_2px_12px_-4px_rgba(0,0,0,0.05)] p-5">
               <p className="text-xs text-zinc-500 font-medium">Avg Hourly Rate</p>
               <p className="text-2xl font-bold text-zinc-900 mt-1">${report.avgRate.toFixed(2)}/h</p>
               <p className="text-xs text-zinc-400 mt-0.5">Range: ${report.minRate.toFixed(0)} – ${report.maxRate.toFixed(0)}</p>
             </div>
-            <div className="bg-white rounded-2xl border border-zinc-200 shadow-sm p-5">
+            <div className="bg-white rounded-2xl border border-zinc-200/80 shadow-[0_2px_12px_-4px_rgba(0,0,0,0.05)] p-5">
               <p className="text-xs text-zinc-500 font-medium">Total Billed Hours</p>
               <p className="text-2xl font-bold text-zinc-900 mt-1">{report.totalHours.toLocaleString()}h</p>
               <p className="text-xs text-zinc-400 mt-0.5">Across {invoices.length} invoice{invoices.length !== 1 ? 's' : ''}</p>
@@ -355,7 +358,7 @@ export default function FinanceReportsPage() {
       {/* ---- REVENUE TAB ---- */}
       {tab === 'revenue' && (
         <div className="space-y-6">
-          <div className="bg-white rounded-2xl border border-zinc-200 shadow-sm p-6">
+          <div className="bg-white rounded-2xl border border-zinc-200/80 shadow-[0_2px_12px_-4px_rgba(0,0,0,0.05)] p-6">
             <div className="flex items-center justify-between mb-5">
               <div>
                 <h3 className="text-sm font-semibold text-zinc-900">Monthly Revenue (Paid Invoices)</h3>
@@ -369,7 +372,7 @@ export default function FinanceReportsPage() {
           </div>
 
           {/* Month-by-month table */}
-          <div className="bg-white rounded-2xl border border-zinc-200 shadow-sm overflow-hidden">
+          <div className="bg-white rounded-2xl border border-zinc-200/80 shadow-[0_2px_12px_-4px_rgba(0,0,0,0.05)] overflow-hidden">
             <div className="px-6 py-4 border-b border-zinc-100">
               <h3 className="text-sm font-semibold text-zinc-900">Monthly Revenue Breakdown</h3>
             </div>
@@ -422,23 +425,23 @@ export default function FinanceReportsPage() {
           {/* Status cards */}
           <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
             {[
-              { status: 'draft', label: 'Draft', count: stats?.draft_invoices ?? 0, icon: '📝' },
-              { status: 'ready', label: 'Ready', count: stats?.ready_invoices ?? 0, icon: '✅' },
-              { status: 'sent', label: 'Sent', count: stats?.sent_invoices ?? 0, icon: '📤' },
-              { status: 'payment_pending', label: 'Pending', count: invoices.filter(i => i.status === 'payment_pending').length, icon: '⏳' },
-              { status: 'paid', label: 'Paid', count: stats?.paid_invoices ?? 0, icon: '💳' },
+              { status: 'draft', label: 'Draft', count: stats?.draft_invoices ?? 0, icon: <Edit3 size={24} /> },
+              { status: 'ready', label: 'Ready', count: stats?.ready_invoices ?? 0, icon: <CheckCircle2 size={24} /> },
+              { status: 'sent', label: 'Sent', count: stats?.sent_invoices ?? 0, icon: <Send size={24} /> },
+              { status: 'payment_pending', label: 'Pending', count: invoices.filter(i => i.status === 'payment_pending').length, icon: <Hourglass size={24} /> },
+              { status: 'paid', label: 'Paid', count: stats?.paid_invoices ?? 0, icon: <CreditCard size={24} /> },
             ].map(s => (
-              <div key={s.status} className="bg-white rounded-2xl border border-zinc-200 shadow-sm p-4 text-center hover:shadow-md transition-shadow">
-                <div className="text-2xl mb-1">{s.icon}</div>
-                <p className="text-3xl font-black text-zinc-900">{s.count}</p>
-                <p className="text-xs text-zinc-500 font-medium mt-0.5">{s.label}</p>
-                <div className="mt-2 h-1 rounded-full" style={{ background: STATUS_COLORS[s.status] }} />
+              <div key={s.status} className="bg-white rounded-2xl border border-zinc-200/80 shadow-[0_2px_12px_-4px_rgba(0,0,0,0.05)] p-4 text-center hover:shadow-lg transition-all flex flex-col items-center">
+                <div className={`text-zinc-500 mb-2`}>{s.icon}</div>
+                <p className="text-3xl font-black text-zinc-900 tracking-tight">{s.count}</p>
+                <p className="text-xs text-zinc-500 font-bold uppercase tracking-wider mt-1">{s.label}</p>
+                <div className="mt-3 h-1 w-full rounded-full" style={{ background: STATUS_COLORS[s.status] }} />
               </div>
             ))}
           </div>
 
           {/* Invoice value distribution */}
-          <div className="bg-white rounded-2xl border border-zinc-200 shadow-sm p-6">
+          <div className="bg-white rounded-2xl border border-zinc-200/80 shadow-[0_2px_12px_-4px_rgba(0,0,0,0.05)] p-6">
             <h3 className="text-sm font-semibold text-zinc-900 mb-4">Invoice Amount by Status</h3>
             <div className="space-y-3">
               {report.statusDist.map(s => (
@@ -460,7 +463,7 @@ export default function FinanceReportsPage() {
 
           {/* Top invoice */}
           {report.topInvoice && (
-            <div className="bg-white rounded-2xl border border-zinc-200 shadow-sm p-6">
+            <div className="bg-white rounded-2xl border border-zinc-200/80 shadow-[0_2px_12px_-4px_rgba(0,0,0,0.05)] p-6">
               <h3 className="text-sm font-semibold text-zinc-900 mb-3">Highest Value Invoice</h3>
               <div className="flex items-center justify-between flex-wrap gap-4">
                 <div>
@@ -492,7 +495,7 @@ export default function FinanceReportsPage() {
         <div className="space-y-6">
           {/* Collection efficiency gauge */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="bg-white rounded-2xl border border-zinc-200 shadow-sm p-6">
+            <div className="bg-white rounded-2xl border border-zinc-200/80 shadow-[0_2px_12px_-4px_rgba(0,0,0,0.05)] p-6">
               <h3 className="text-sm font-semibold text-zinc-900 mb-6">Collection Efficiency</h3>
               <div className="flex items-center justify-between mb-3">
                 <span className="text-xs text-zinc-500">Collected</span>
@@ -514,7 +517,7 @@ export default function FinanceReportsPage() {
               </div>
             </div>
 
-            <div className="bg-white rounded-2xl border border-zinc-200 shadow-sm p-6">
+            <div className="bg-white rounded-2xl border border-zinc-200/80 shadow-[0_2px_12px_-4px_rgba(0,0,0,0.05)] p-6">
               <h3 className="text-sm font-semibold text-zinc-900 mb-4">Rate Analytics</h3>
               <div className="space-y-4">
                 {[
@@ -533,7 +536,7 @@ export default function FinanceReportsPage() {
           </div>
 
           {/* Hours by month */}
-          <div className="bg-white rounded-2xl border border-zinc-200 shadow-sm p-6">
+          <div className="bg-white rounded-2xl border border-zinc-200/80 shadow-[0_2px_12px_-4px_rgba(0,0,0,0.05)] p-6">
             <h3 className="text-sm font-semibold text-zinc-900 mb-5">Billed Hours by Month</h3>
             <div className="flex items-end gap-3 h-32">
               {report.hoursByMonth.map((m, i) => {
@@ -566,19 +569,19 @@ export default function FinanceReportsPage() {
           </div>
 
           {/* Pending validation + queue health */}
-          <div className="bg-white rounded-2xl border border-zinc-200 shadow-sm p-6">
+          <div className="bg-white rounded-2xl border border-zinc-200/80 shadow-[0_2px_12px_-4px_rgba(0,0,0,0.05)] p-6">
             <h3 className="text-sm font-semibold text-zinc-900 mb-4">Queue Health</h3>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
               {[
-                { label: 'Awaiting Validation', value: stats?.pending_validation ?? 0, icon: '🔍', cls: 'text-amber-700 bg-amber-50 ring-amber-200' },
-                { label: 'Draft Invoices', value: stats?.draft_invoices ?? 0, icon: '📝', cls: 'text-zinc-700 bg-zinc-100 ring-zinc-200' },
-                { label: 'Ready to Send', value: stats?.ready_invoices ?? 0, icon: '✅', cls: 'text-blue-700 bg-blue-50 ring-blue-200' },
-                { label: 'Pending Payment', value: invoices.filter(i => i.status === 'payment_pending').length, icon: '⏳', cls: 'text-orange-700 bg-orange-50 ring-orange-200' },
+                { label: 'Awaiting Validation', value: stats?.pending_validation ?? 0, icon: <Search size={20} />, cls: 'text-amber-700 bg-amber-50 ring-amber-200' },
+                { label: 'Draft Invoices', value: stats?.draft_invoices ?? 0, icon: <Edit3 size={20} />, cls: 'text-zinc-700 bg-zinc-100 ring-zinc-200' },
+                { label: 'Ready to Send', value: stats?.ready_invoices ?? 0, icon: <CheckCircle2 size={20} />, cls: 'text-blue-700 bg-blue-50 ring-blue-200' },
+                { label: 'Pending Payment', value: invoices.filter(i => i.status === 'payment_pending').length, icon: <Hourglass size={20} />, cls: 'text-orange-700 bg-orange-50 ring-orange-200' },
               ].map(item => (
-                <div key={item.label} className="rounded-xl border border-zinc-100 p-4 text-center">
+                <div key={item.label} className="rounded-xl border border-zinc-200/80 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.05)] p-4 text-center hover:shadow-md transition-all">
                   <div className={`inline-flex h-10 w-10 items-center justify-center rounded-xl ring-1 text-xl mx-auto ${item.cls}`}>{item.icon}</div>
-                  <p className="text-2xl font-bold text-zinc-900 mt-2">{item.value}</p>
-                  <p className="text-xs text-zinc-500 mt-0.5 leading-tight">{item.label}</p>
+                  <p className="text-2xl font-black tracking-tight text-zinc-900 mt-3">{item.value}</p>
+                  <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500 mt-1 leading-tight">{item.label}</p>
                 </div>
               ))}
             </div>

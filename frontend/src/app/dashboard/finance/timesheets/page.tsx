@@ -39,11 +39,11 @@ export default function FinancePendingQueue() {
         <table className="min-w-full divide-y divide-zinc-200">
           <thead className="bg-zinc-50">
             <tr>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-zinc-500 uppercase tracking-wider">Candidate</th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-zinc-500 uppercase tracking-wider">Period</th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-zinc-500 uppercase tracking-wider">Total Hours</th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-zinc-500 uppercase tracking-wider">Submitted</th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-zinc-500 uppercase tracking-wider">Client Notes</th>
+              <th scope="col" className="px-6 py-4 text-left text-[11px] font-bold text-zinc-500 uppercase tracking-wider">Candidate & Client</th>
+              <th scope="col" className="px-6 py-4 text-left text-[11px] font-bold text-zinc-500 uppercase tracking-wider">Period</th>
+              <th scope="col" className="px-6 py-4 text-left text-[11px] font-bold text-zinc-500 uppercase tracking-wider">Total Hours</th>
+              <th scope="col" className="px-6 py-4 text-left text-[11px] font-bold text-zinc-500 uppercase tracking-wider">Submitted</th>
+              <th scope="col" className="px-6 py-4 text-left text-[11px] font-bold text-zinc-500 uppercase tracking-wider">Client Notes</th>
               <th scope="col" className="relative px-6 py-3"><span className="sr-only">Action</span></th>
             </tr>
           </thead>
@@ -56,28 +56,42 @@ export default function FinancePendingQueue() {
               </tr>
             ) : (
               timesheets.map((ts) => (
-                <tr key={ts.id} className="hover:bg-zinc-50 transition-colors">
-                  <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-zinc-900">
-                    {ts.candidate_id.slice(0, 8)}...
+                <tr key={ts.id} className="hover:bg-zinc-50 transition-colors group">
+                  <td className="whitespace-nowrap px-6 py-4">
+                    <div className="flex items-center gap-3">
+                      <div className="h-9 w-9 rounded-full bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-700 font-bold text-sm shrink-0 shadow-sm">
+                        {ts.candidate_name ? ts.candidate_name.charAt(0).toUpperCase() : 'U'}
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="text-[14px] font-bold text-zinc-900">{ts.candidate_name || 'Unknown Candidate'}</span>
+                        <span className="text-[12px] font-medium text-zinc-500">
+                          Client: <span className="text-zinc-700">{ts.manager_name || ts.manager_email?.split('@')[0] || 'Unknown'}</span>
+                        </span>
+                      </div>
+                    </div>
                   </td>
-                  <td className="whitespace-nowrap px-6 py-4 text-sm text-zinc-500">
-                    {format(parseISO(ts.period_start_date), 'MMM d')} – {format(parseISO(ts.period_end_date), 'MMM d, yyyy')}
+                  <td className="whitespace-nowrap px-6 py-4">
+                    <div className="text-[13px] font-medium text-zinc-900">{format(parseISO(ts.period_start_date), 'MMM d')} – {format(parseISO(ts.period_end_date), 'MMM d, yyyy')}</div>
                   </td>
-                  <td className="whitespace-nowrap px-6 py-4 text-sm font-semibold text-zinc-900">
-                    {ts.total_hours}h
+                  <td className="whitespace-nowrap px-6 py-4">
+                    <div className="inline-flex items-center px-2.5 py-0.5 rounded-md bg-zinc-100 text-[13px] font-bold text-zinc-700 border border-zinc-200">
+                      {ts.total_hours}h
+                    </div>
                   </td>
-                  <td className="whitespace-nowrap px-6 py-4 text-sm text-zinc-500">
-                    {ts.submitted_at ? format(parseISO(ts.submitted_at), 'MMM d, yyyy') : '—'}
+                  <td className="whitespace-nowrap px-6 py-4">
+                    <div className="text-[13px] text-zinc-500 font-medium">
+                      {ts.submitted_at ? format(parseISO(ts.submitted_at), 'MMM d, yyyy') : '—'}
+                    </div>
                   </td>
-                  <td className="px-6 py-4 text-sm text-zinc-500 max-w-xs truncate">
+                  <td className="px-6 py-4 text-[13px] text-zinc-500 max-w-[200px] truncate font-medium">
                     {ts.approval_comments || '—'}
                   </td>
-                  <td className="whitespace-nowrap px-6 py-4 text-right text-sm font-medium">
+                  <td className="whitespace-nowrap px-6 py-4 text-right">
                     <Link
                       href={`/dashboard/finance/timesheets/${ts.id}`}
-                      className="inline-flex items-center rounded-md bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-indigo-500"
+                      className="inline-flex items-center rounded bg-indigo-600 px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wider text-white shadow-sm hover:bg-indigo-500 transition-colors"
                     >
-                      Review →
+                      Review & Generate Invoice &rarr;
                     </Link>
                   </td>
                 </tr>

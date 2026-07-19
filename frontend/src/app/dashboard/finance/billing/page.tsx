@@ -1,9 +1,10 @@
-﻿'use client';
+'use client';
 
 import { useEffect, useState, useMemo } from 'react';
 import Link from 'next/link';
 import { invoicesApi, InvoiceListItem } from '@/lib/invoices';
 import { format, parseISO, startOfMonth, isSameMonth, subMonths } from 'date-fns';
+import { DollarSign, AlertCircle, Clock, TrendingUp, Search, FileText, ChevronUp, ChevronDown } from 'lucide-react';
 
 // -- helpers
 
@@ -195,10 +196,10 @@ export default function BillingSummaryPage() {
   );
 
   const kpiCards = [
-    { title: 'Total Revenue', value: fmt(stats.totalRevenue), sub: `${fmt(stats.thisMonthRevenue)} this month`, icon: '💰', cls: 'bg-emerald-50 text-emerald-600 ring-emerald-200' },
-    { title: 'Outstanding', value: fmt(stats.totalOutstanding), sub: 'Sent + payment pending', icon: '⏳', cls: 'bg-orange-50 text-orange-600 ring-orange-200' },
-    { title: 'Total Billed Hours', value: `${stats.totalHours.toLocaleString()}h`, sub: `Across ${invoices.length} invoice${invoices.length !== 1 ? 's' : ''}`, icon: '🕐', cls: 'bg-indigo-50 text-indigo-600 ring-indigo-200' },
-    { title: 'Avg Hourly Rate', value: stats.avgRate > 0 ? `$${stats.avgRate.toFixed(0)}/h` : '—', sub: 'Average across all invoices', icon: '📊', cls: 'bg-violet-50 text-violet-600 ring-violet-200' },
+    { title: 'Total Revenue', value: fmt(stats.totalRevenue), sub: `${fmt(stats.thisMonthRevenue)} this month`, icon: <DollarSign size={18} strokeWidth={1.75} />, cls: 'text-emerald-500' },
+    { title: 'Outstanding', value: fmt(stats.totalOutstanding), sub: 'Sent + payment pending', icon: <AlertCircle size={18} strokeWidth={1.75} />, cls: 'text-orange-500' },
+    { title: 'Total Billed Hours', value: `${stats.totalHours.toLocaleString()}h`, sub: `Across ${invoices.length} invoice${invoices.length !== 1 ? 's' : ''}`, icon: <Clock size={18} strokeWidth={1.75} />, cls: 'text-indigo-500' },
+    { title: 'Avg Hourly Rate', value: stats.avgRate > 0 ? `$${stats.avgRate.toFixed(0)}/h` : '—', sub: 'Average across all invoices', icon: <TrendingUp size={18} strokeWidth={1.75} />, cls: 'text-violet-500' },
   ];
 
   return (
@@ -206,11 +207,11 @@ export default function BillingSummaryPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-zinc-900">Billing Summary</h2>
+          <h2 className="text-2xl font-bold tracking-tight text-zinc-900">Billing Summary</h2>
           <p className="mt-1 text-sm text-zinc-500">Revenue analytics, invoice status breakdown, and billing history</p>
         </div>
-        <Link href="/dashboard/finance/invoices" className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 transition-colors">
-          <span>📄</span> Invoice Queue
+        <Link href="/dashboard/finance/invoices" className="inline-flex items-center gap-2 rounded-lg bg-zinc-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-zinc-800 transition-colors">
+          <FileText size={16} /> Invoice Queue
         </Link>
       </div>
 
@@ -219,16 +220,16 @@ export default function BillingSummaryPage() {
       {/* KPI Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {kpiCards.map(card => (
-          <div key={card.title} className="bg-white rounded-2xl border border-zinc-200 shadow-sm p-5 flex flex-col gap-3 hover:shadow-md transition-shadow">
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="text-xs font-medium text-zinc-500">{card.title}</p>
-                <p className="mt-1 text-2xl font-bold text-zinc-900">{card.value}</p>
-                <p className="mt-0.5 text-xs text-zinc-400">{card.sub}</p>
-              </div>
-              <div className={`flex h-10 w-10 items-center justify-center rounded-xl ring-1 text-xl ${card.cls}`}>
+          <div key={card.title} className="bg-white rounded-xl border border-zinc-200/60 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.04)] p-4 flex flex-col justify-between hover:shadow-[0_8px_24px_-4px_rgba(0,0,0,0.08)] hover:-translate-y-0.5 transition-all duration-300">
+            <div className="flex items-center gap-2 mb-3">
+              <div className={`flex items-center justify-center flex-shrink-0 ${card.cls}`}>
                 {card.icon}
               </div>
+              <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500 truncate">{card.title}</p>
+            </div>
+            <div>
+              <p className="text-2xl font-black tracking-tight text-zinc-900">{card.value}</p>
+              <p className="mt-0.5 text-xs text-zinc-400 font-medium">{card.sub}</p>
             </div>
           </div>
         ))}
@@ -237,7 +238,7 @@ export default function BillingSummaryPage() {
       {/* Charts Row */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Bar Chart */}
-        <div className="lg:col-span-2 bg-white rounded-2xl border border-zinc-200 shadow-sm p-6">
+        <div className="lg:col-span-2 bg-white rounded-2xl border border-zinc-200/80 shadow-[0_2px_12px_-4px_rgba(0,0,0,0.05)] p-6">
           <div className="flex items-center justify-between mb-4">
             <div>
               <h3 className="text-sm font-semibold text-zinc-900">Monthly Revenue (Paid)</h3>
@@ -255,14 +256,14 @@ export default function BillingSummaryPage() {
           }
         </div>
         {/* Donut */}
-        <div className="bg-white rounded-2xl border border-zinc-200 shadow-sm p-6">
+        <div className="bg-white rounded-2xl border border-zinc-200/80 shadow-[0_2px_12px_-4px_rgba(0,0,0,0.05)] p-6">
           <h3 className="text-sm font-semibold text-zinc-900 mb-4">Invoice Status Breakdown</h3>
           <DonutChart data={stats.donut} />
         </div>
       </div>
 
       {/* Invoice Table */}
-      <div className="bg-white rounded-2xl border border-zinc-200 shadow-sm overflow-hidden">
+      <div className="bg-white rounded-2xl border border-zinc-200/80 shadow-[0_2px_12px_-4px_rgba(0,0,0,0.05)] overflow-hidden">
         <div className="px-6 py-4 border-b border-zinc-100 flex flex-wrap gap-3 items-center justify-between">
           <h3 className="text-sm font-semibold text-zinc-900">Billing History</h3>
           <div className="flex flex-wrap gap-3">
@@ -272,16 +273,14 @@ export default function BillingSummaryPage() {
                 value={search}
                 onChange={e => setSearch(e.target.value)}
                 placeholder="Search invoice #..."
-                className="pl-8 pr-3 py-1.5 text-sm border border-zinc-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 w-44"
+                className="pl-9 pr-3 py-1.5 text-sm border border-zinc-200/80 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 w-56 shadow-sm transition-all"
               />
-              <svg className="absolute left-2.5 top-2 h-4 w-4 text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
+              <Search size={14} className="absolute left-3 top-2.5 text-zinc-400" />
             </div>
             <select
               value={statusFilter}
               onChange={e => setStatusFilter(e.target.value)}
-              className="text-sm border border-zinc-200 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white text-zinc-700"
+              className="text-sm border border-zinc-200/80 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white text-zinc-700 shadow-sm cursor-pointer"
             >
               <option value="all">All Statuses</option>
               <option value="draft">Draft</option>
@@ -294,15 +293,15 @@ export default function BillingSummaryPage() {
         </div>
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-zinc-200">
-            <thead className="bg-zinc-900">
+            <thead className="bg-zinc-50 border-b border-zinc-200 text-zinc-600">
               <tr>
-                <th className="px-5 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider cursor-pointer hover:text-indigo-300 select-none" onClick={() => toggleSort('invoice_number')}>Invoice # <SortIcon k="invoice_number" /></th>
-                <th className="px-5 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">Period</th>
-                <th className="px-5 py-3 text-right text-xs font-semibold text-white uppercase tracking-wider cursor-pointer hover:text-indigo-300 select-none" onClick={() => toggleSort('total_hours')}>Hours <SortIcon k="total_hours" /></th>
-                <th className="px-5 py-3 text-right text-xs font-semibold text-white uppercase tracking-wider">Rate</th>
-                <th className="px-5 py-3 text-right text-xs font-semibold text-white uppercase tracking-wider cursor-pointer hover:text-indigo-300 select-none" onClick={() => toggleSort('total_amount')}>Total <SortIcon k="total_amount" /></th>
-                <th className="px-5 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider cursor-pointer hover:text-indigo-300 select-none" onClick={() => toggleSort('issued_at')}>Issued <SortIcon k="issued_at" /></th>
-                <th className="px-5 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">Status</th>
+                <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider cursor-pointer hover:text-indigo-600 select-none" onClick={() => toggleSort('invoice_number')}>Invoice # <SortIcon k="invoice_number" /></th>
+                <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider">Period</th>
+                <th className="px-5 py-3 text-right text-xs font-semibold uppercase tracking-wider cursor-pointer hover:text-indigo-600 select-none" onClick={() => toggleSort('total_hours')}>Hours <SortIcon k="total_hours" /></th>
+                <th className="px-5 py-3 text-right text-xs font-semibold uppercase tracking-wider">Rate</th>
+                <th className="px-5 py-3 text-right text-xs font-semibold uppercase tracking-wider cursor-pointer hover:text-indigo-600 select-none" onClick={() => toggleSort('total_amount')}>Total <SortIcon k="total_amount" /></th>
+                <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider cursor-pointer hover:text-indigo-600 select-none" onClick={() => toggleSort('issued_at')}>Issued <SortIcon k="issued_at" /></th>
+                <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider">Status</th>
                 <th className="px-5 py-3"><span className="sr-only">Actions</span></th>
               </tr>
             </thead>
@@ -310,7 +309,9 @@ export default function BillingSummaryPage() {
               {tableData.length === 0 ? (
                 <tr>
                   <td colSpan={8} className="px-6 py-14 text-center">
-                    <p className="text-2xl mb-2">📋</p>
+                    <div className="flex justify-center mb-3">
+                      <FileText size={32} className="text-zinc-300" />
+                    </div>
                     <p className="text-sm text-zinc-500">{invoices.length === 0 ? 'No invoices generated yet.' : 'No invoices match your filters.'}</p>
                   </td>
                 </tr>

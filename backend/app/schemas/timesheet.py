@@ -168,3 +168,14 @@ class TrendDataPoint(BaseModel):
 
 class TrendDataOut(BaseModel):
     data: list[TrendDataPoint]
+
+class RecentActivityOut(BaseModel):
+    id: UUID
+    action: str
+    actor_name: str | None
+    timesheet_id: UUID
+    period_start_date: datetime
+    period_end_date: datetime
+    total_hours: float
+    created_at: datetime
+    candidate_name: str | None
