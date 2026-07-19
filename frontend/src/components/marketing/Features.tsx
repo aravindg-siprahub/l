@@ -1,3 +1,5 @@
+import Reveal from './Reveal';
+
 const features = [
   {
     name: 'AI Timesheet Management',
@@ -43,7 +45,7 @@ const features = [
 
 export default function Features() {
   return (
-    <div id="features" className="py-24 sm:py-32 bg-zinc-50">
+    <div id="features" className="py-24 sm:py-32">
       <div className="mx-auto max-w-7xl px-6 lg:px-8">
         <div className="mx-auto max-w-2xl lg:text-center">
           <h2 className="text-base font-semibold leading-7 text-indigo-600">Everything you need</h2>
@@ -57,18 +59,20 @@ export default function Features() {
         
         <div className="mx-auto mt-16 max-w-2xl sm:mt-20 lg:mt-24 lg:max-w-none">
           <dl className="grid max-w-xl grid-cols-1 gap-x-8 gap-y-16 lg:max-w-none lg:grid-cols-4 md:grid-cols-2">
-            {features.map((feature) => (
-              <div key={feature.name} className="flex flex-col items-start bg-white p-6 rounded-2xl shadow-sm border border-zinc-200 hover:shadow-md transition-shadow group">
-                <div className="rounded-lg bg-indigo-50 p-3 ring-1 ring-indigo-200 mb-4 group-hover:scale-110 transition-transform">
-                  <span className="text-2xl" aria-hidden="true">{feature.icon}</span>
+            {features.map((feature, i) => (
+              <Reveal key={feature.name} delay={(i % 4) * 80}>
+                <div className="flex h-full flex-col items-start bg-white p-6 rounded-2xl shadow-sm border border-zinc-200 transition-all duration-300 hover:shadow-lg hover:-translate-y-1 group">
+                  <div className="rounded-lg bg-indigo-50 p-3 ring-1 ring-indigo-200 mb-4 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3">
+                    <span className="text-2xl" aria-hidden="true">{feature.icon}</span>
+                  </div>
+                  <dt className="text-lg font-semibold leading-7 text-zinc-900">
+                    {feature.name}
+                  </dt>
+                  <dd className="mt-2 flex flex-auto flex-col text-base leading-7 text-zinc-600">
+                    <p className="flex-auto">{feature.description}</p>
+                  </dd>
                 </div>
-                <dt className="text-lg font-semibold leading-7 text-zinc-900">
-                  {feature.name}
-                </dt>
-                <dd className="mt-2 flex flex-auto flex-col text-base leading-7 text-zinc-600">
-                  <p className="flex-auto">{feature.description}</p>
-                </dd>
-              </div>
+              </Reveal>
             ))}
           </dl>
         </div>

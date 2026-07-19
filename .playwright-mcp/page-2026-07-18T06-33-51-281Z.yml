@@ -1,0 +1,256 @@
+- generic [active] [ref=f52e1]:
+  - generic [ref=f52e2]:
+    - banner [ref=f52e3]:
+      - generic [ref=f52e4]:
+        - img "Lorvish" [ref=f52e5]
+        - generic [ref=f52e6]:
+          - link "Log in" [ref=f52e7] [cursor=pointer]:
+            - /url: /login
+          - link "Get Started" [ref=f52e8] [cursor=pointer]:
+            - /url: /register
+    - main [ref=f52e9]:
+      - generic [ref=f52e13]:
+        - generic [ref=f52e14]:
+          - generic [ref=f52e16] [cursor=pointer]:
+            - text: Announcing our new AI Invoice Generation.
+            - link "Read more" [ref=f52e17]:
+              - /url: "#features"
+              - text: Read more →
+          - heading "Automate Timesheets & Invoice Generation" [level=1] [ref=f52e19]
+          - paragraph [ref=f52e20]: The AI-powered platform that simplifies operations for staffing and consulting businesses. Reduce manual work, improve billing accuracy, and maintain complete visibility across the approval lifecycle.
+          - generic [ref=f52e21]:
+            - link "Get Started" [ref=f52e22] [cursor=pointer]:
+              - /url: "#contact"
+            - link "Log in" [ref=f52e23] [cursor=pointer]:
+              - /url: /login
+              - text: Log in →
+            - link "Request Demo" [ref=f52e24] [cursor=pointer]:
+              - /url: "#contact"
+        - generic [ref=f52e25]: Interactive Dashboard Demo
+      - generic [ref=f52e37]:
+        - generic [ref=f52e38]:
+          - heading "Everything you need" [level=2] [ref=f52e39]
+          - paragraph [ref=f52e40]: A complete platform for modern staffing
+          - paragraph [ref=f52e41]: From the moment a candidate submits a timesheet to the second the invoice is delivered, Lorvish handles the heavy lifting so your team can focus on growth.
+        - generic [ref=f52e43]:
+          - generic [ref=f52e44]:
+            - generic [ref=f52e45]: ⏳
+            - term [ref=f52e46]: AI Timesheet Management
+            - definition [ref=f52e47]:
+              - paragraph [ref=f52e48]: Automate candidate submissions, validate hours effortlessly, and track status with intelligent validation rules that prevent common errors.
+          - generic [ref=f52e49]:
+            - generic [ref=f52e50]: ✅
+            - term [ref=f52e51]: Client Approval Workflow
+            - definition [ref=f52e52]:
+              - paragraph [ref=f52e53]: Seamlessly send approval requests via Microsoft Graph API. Clients can approve, reject, or add comments with a single click.
+          - generic [ref=f52e54]:
+            - generic [ref=f52e55]: 📊
+            - term [ref=f52e56]: Finance Validation
+            - definition [ref=f52e57]:
+              - paragraph [ref=f52e58]: HR and Accounts teams verify employee allocation, attendance, and billable hours through an optimized queue before invoicing.
+          - generic [ref=f52e59]:
+            - generic [ref=f52e60]: 🤖
+            - term [ref=f52e61]: AI Invoice Generation
+            - definition [ref=f52e62]:
+              - paragraph [ref=f52e63]: Our AI engine automatically calculates billing amounts, computes taxes, generates the invoice PDF, and drafts the delivery email.
+          - generic [ref=f52e64]:
+            - generic [ref=f52e65]: 👀
+            - term [ref=f52e66]: Invoice Tracking
+            - definition [ref=f52e67]:
+              - paragraph [ref=f52e68]: Complete visibility into invoice status. Know exactly when an invoice is generated, sent, viewed, and paid by the client.
+          - generic [ref=f52e69]:
+            - generic [ref=f52e70]: 📋
+            - term [ref=f52e71]: Audit Logs
+            - definition [ref=f52e72]:
+              - paragraph [ref=f52e73]: Maintain compliance with a complete audit history of all actions, approvals, edits, and system activities across all modules.
+          - generic [ref=f52e74]:
+            - generic [ref=f52e75]: 📈
+            - term [ref=f52e76]: Analytics Dashboard
+            - definition [ref=f52e77]:
+              - paragraph [ref=f52e78]: Role-specific dashboards providing actionable insights, pending tasks, recent activity, and workflow statistics at a glance.
+          - generic [ref=f52e79]:
+            - generic [ref=f52e80]: 🔐
+            - term [ref=f52e81]: Role-Based Access Control
+            - definition [ref=f52e82]:
+              - paragraph [ref=f52e83]: Secure, granular permissions ensuring Candidates, Client Managers, HR, Finance, and Admins only see what they need to.
+      - generic [ref=f52e85]:
+        - generic [ref=f52e86]:
+          - heading "How it works" [level=2] [ref=f52e87]
+          - paragraph [ref=f52e88]: Our streamlined 6-step workflow ensures accuracy, compliance, and speed at every stage of the billing lifecycle.
+        - generic [ref=f52e92]:
+          - generic [ref=f52e93]:
+            - generic [ref=f52e94]: 🧑‍💻
+            - generic [ref=f52e96]:
+              - generic [ref=f52e97]: Step 1
+              - heading "Candidate Submission" [level=3] [ref=f52e98]
+              - paragraph [ref=f52e99]: Candidate submits a timesheet for the billing period.
+          - generic [ref=f52e100]:
+            - generic [ref=f52e101]: ✅
+            - generic [ref=f52e103]:
+              - generic [ref=f52e104]: Step 2
+              - heading "Client Manager Approval" [level=3] [ref=f52e105]
+              - paragraph [ref=f52e106]: Client receives email notification and approves/rejects.
+          - generic [ref=f52e107]:
+            - generic [ref=f52e108]: 🏦
+            - generic [ref=f52e110]:
+              - generic [ref=f52e111]: Step 3
+              - heading "Finance Validation" [level=3] [ref=f52e112]
+              - paragraph [ref=f52e113]: HR & Accounts teams validate attendance and billable hours.
+          - generic [ref=f52e114]:
+            - generic [ref=f52e115]: 🤖
+            - generic [ref=f52e117]:
+              - generic [ref=f52e118]: Step 4
+              - heading "AI Invoice Generation" [level=3] [ref=f52e119]
+              - paragraph [ref=f52e120]: AI calculates totals, taxes, and generates the PDF.
+          - generic [ref=f52e121]:
+            - generic [ref=f52e122]: 📤
+            - generic [ref=f52e124]:
+              - generic [ref=f52e125]: Step 5
+              - heading "Invoice Delivery" [level=3] [ref=f52e126]
+              - paragraph [ref=f52e127]: Approved invoice is automatically sent to the client.
+          - generic [ref=f52e128]:
+            - generic [ref=f52e129]: 📈
+            - generic [ref=f52e131]:
+              - generic [ref=f52e132]: Step 6
+              - heading "Reports & Audit" [level=3] [ref=f52e133]
+              - paragraph [ref=f52e134]: System logs the activity and updates analytics dashboards.
+      - generic [ref=f52e137]:
+        - generic [ref=f52e139]:
+          - heading "Maximize ROI" [level=2] [ref=f52e140]
+          - paragraph [ref=f52e141]: Platform Benefits
+          - paragraph [ref=f52e142]: Stop wasting hours on manual data entry and email follow-ups. Lorvish transforms your back-office operations into a competitive advantage.
+          - generic [ref=f52e143]:
+            - generic [ref=f52e144]:
+              - term [ref=f52e145]:
+                - generic [ref=f52e146]: ⚡
+                - text: Faster Approval Process.
+              - definition [ref=f52e147]: Automated notifications via Microsoft Graph API mean managers approve timesheets in seconds, not days.
+            - generic [ref=f52e148]:
+              - term [ref=f52e149]:
+                - generic [ref=f52e150]: 📉
+                - text: Reduced Processing Errors.
+              - definition [ref=f52e151]: AI-driven validation prevents mismatched hours, incorrect rates, and billing discrepancies before they happen.
+            - generic [ref=f52e152]:
+              - term [ref=f52e153]:
+                - generic [ref=f52e154]: ⏱️
+                - text: Time Saved on Invoicing.
+              - definition [ref=f52e155]: What used to take an accounting team hours is now done instantly by AI, including tax calculation and PDF generation.
+        - generic [ref=f52e158]:
+          - heading "Efficiency Metrics" [level=3] [ref=f52e159]
+          - generic [ref=f52e160]:
+            - generic [ref=f52e161]:
+              - generic [ref=f52e162]: 85%
+              - generic [ref=f52e163]: Less manual effort
+            - generic [ref=f52e164]:
+              - generic [ref=f52e165]: 3x
+              - generic [ref=f52e166]: Faster invoice generation
+            - generic [ref=f52e167]:
+              - generic [ref=f52e168]: 99%
+              - generic [ref=f52e169]: Billing accuracy
+            - generic [ref=f52e170]:
+              - generic [ref=f52e171]: 100%
+              - generic [ref=f52e172]: Audit compliance
+      - generic [ref=f52e175]:
+        - heading "Frequently asked questions" [level=2] [ref=f52e176]
+        - generic [ref=f52e177]:
+          - generic [ref=f52e178]:
+            - term [ref=f52e179]:
+              - button "How does the AI invoice generation work? ↓" [ref=f52e180]:
+                - generic [ref=f52e181]: How does the AI invoice generation work?
+                - generic [ref=f52e182]: ↓
+            - definition [ref=f52e184]:
+              - paragraph [ref=f52e185]: Our AI engine automatically pulls approved timesheet data, calculates total billable amounts based on contract rates, applies relevant taxes, and generates a formatted PDF invoice without human intervention.
+          - term [ref=f52e187]:
+            - button "Do clients need an account to approve timesheets? ↓" [ref=f52e188]:
+              - generic [ref=f52e189]: Do clients need an account to approve timesheets?
+              - generic [ref=f52e190]: ↓
+          - term [ref=f52e193]:
+            - button "Can we track who approved what and when? ↓" [ref=f52e194]:
+              - generic [ref=f52e195]: Can we track who approved what and when?
+              - generic [ref=f52e196]: ↓
+          - term [ref=f52e199]:
+            - button "What happens if a timesheet is rejected? ↓" [ref=f52e200]:
+              - generic [ref=f52e201]: What happens if a timesheet is rejected?
+              - generic [ref=f52e202]: ↓
+          - term [ref=f52e205]:
+            - button "Is the platform secure? ↓" [ref=f52e206]:
+              - generic [ref=f52e207]: Is the platform secure?
+              - generic [ref=f52e208]: ↓
+      - generic [ref=f52e211]:
+        - generic [ref=f52e212]:
+          - heading "Contact sales" [level=2] [ref=f52e213]
+          - paragraph [ref=f52e214]: Learn how Lorvish can transform your timesheet and invoice workflow.
+        - generic [ref=f52e215]:
+          - generic [ref=f52e216]:
+            - heading "US Headquarters" [level=3] [ref=f52e218]
+            - paragraph [ref=f52e221]: 4819 Emperor Boulevard, Suite 400, Durham, NC 27703
+            - paragraph [ref=f52e222]:
+              - text: "Tel:"
+              - link "+1 919-999-0626" [ref=f52e223] [cursor=pointer]:
+                - /url: tel:+19199990626
+            - paragraph [ref=f52e224]:
+              - link "info@lorvish.com" [ref=f52e225] [cursor=pointer]:
+                - /url: mailto:info@lorvish.com
+            - iframe [ref=f52e227]
+          - generic [ref=f52e228]:
+            - heading "Regional Office" [level=3] [ref=f52e230]
+            - paragraph [ref=f52e233]: 499 Ernston Rd, Parlin, NJ 08859
+            - iframe [ref=f52e235]
+          - generic [ref=f52e236]:
+            - heading "India Headquarters" [level=3] [ref=f52e238]
+            - paragraph [ref=f52e241]: "#502, Techno Residency, Near Paradise Hotel, Raheja Mindspace Building, Madhapur, Hyderabad - 500081"
+            - iframe [ref=f52e243]
+        - generic [ref=f52e245]:
+          - heading "Get a Quote" [level=3] [ref=f52e247]
+          - generic [ref=f52e250]:
+            - generic [ref=f52e251]:
+              - generic [ref=f52e252]: Name
+              - textbox "Name" [ref=f52e253]
+            - generic [ref=f52e254]:
+              - generic [ref=f52e255]: Mobile
+              - textbox "Mobile" [ref=f52e256]
+            - generic [ref=f52e257]:
+              - generic [ref=f52e258]: Email
+              - textbox "Email" [ref=f52e259]:
+                - /placeholder: Email id
+            - generic [ref=f52e260]:
+              - generic [ref=f52e261]: Subject
+              - textbox "Subject" [ref=f52e262]
+            - generic [ref=f52e263]:
+              - generic [ref=f52e264]: Messages
+              - textbox "Messages" [ref=f52e265]
+            - button "Submit" [ref=f52e267]
+    - contentinfo [ref=f52e291]:
+      - generic [ref=f52e292]:
+        - generic [ref=f52e293]:
+          - generic [ref=f52e294]:
+            - generic [ref=f52e295]: L
+            - generic [ref=f52e296]: Lorvish Technologies
+          - paragraph [ref=f52e297]: Enterprise AI-Powered Timesheet & Invoice Management Platform.
+        - generic [ref=f52e298]:
+          - link "Features" [ref=f52e299] [cursor=pointer]:
+            - /url: "#features"
+          - link "Workflow" [ref=f52e300] [cursor=pointer]:
+            - /url: "#workflow"
+          - link "Benefits" [ref=f52e301] [cursor=pointer]:
+            - /url: "#benefits"
+          - link "Contact" [ref=f52e302] [cursor=pointer]:
+            - /url: "#contact"
+          - link "System Status" [ref=f52e303] [cursor=pointer]:
+            - /url: /status
+      - generic [ref=f52e304]:
+        - generic [ref=f52e305]:
+          - paragraph [ref=f52e306]:
+            - link "Support" [ref=f52e307] [cursor=pointer]:
+              - /url: /support
+            - text: /
+            - link "Terms & Conditions" [ref=f52e308] [cursor=pointer]:
+              - /url: /terms
+            - text: /
+            - link "Privacy Policy" [ref=f52e309] [cursor=pointer]:
+              - /url: /privacy
+            - text: / © 2026 Lorvish Technologies. All Rights Reserved.
+          - paragraph [ref=f52e310]: Designed By Fleet IT Solutions Pvt Ltd.
+        - button "Scroll to top" [ref=f52e311] [cursor=pointer]
+  - button "Open Next.js Dev Tools" [ref=f52e319] [cursor=pointer]
+  - alert [ref=f52e323]
