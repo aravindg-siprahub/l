@@ -49,14 +49,34 @@ export default function AdminDashboard() {
         events.push({
           id: `${user.id}-created`,
           timestamp: new Date(user.created_at),
-          item: { id: `${user.id}-created`, actor: user.full_name, action: `account created`, target: `(${user.role})`, time: '', icon: '➕', color: 'emerald' }
+          item: { 
+            id: `${user.id}-created`, 
+            title: user.full_name, 
+            subtitle: `Account created`, 
+            description: `Role: ${user.role}`, 
+            timeAgo: '', 
+            badgeLabel: 'New User',
+            icon: '➕', 
+            color: 'emerald',
+            href: '#'
+          }
         });
       }
       if (user.last_login_at) {
         events.push({
           id: `${user.id}-login`,
           timestamp: new Date(user.last_login_at),
-          item: { id: `${user.id}-login`, actor: user.full_name, action: 'logged in', target: '', time: '', icon: '🔑', color: 'indigo' }
+          item: { 
+            id: `${user.id}-login`, 
+            title: user.full_name, 
+            subtitle: 'Logged in', 
+            description: '', 
+            timeAgo: '', 
+            badgeLabel: 'Login',
+            icon: '🔑', 
+            color: 'indigo',
+            href: '#'
+          }
         });
       }
     });
@@ -66,7 +86,7 @@ export default function AdminDashboard() {
       .slice(0, 10) // Show top 10 recent activities
       .map(event => ({
         ...event.item,
-        time: formatDistanceToNow(event.timestamp, { addSuffix: true })
+        timeAgo: formatDistanceToNow(event.timestamp, { addSuffix: true })
       }));
   }, [users]);
 

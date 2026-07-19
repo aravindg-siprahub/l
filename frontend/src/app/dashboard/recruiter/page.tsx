@@ -12,9 +12,9 @@ const stats = [
 ];
 
 const activity: ActivityItem[] = [
-  { id: '1', actor: 'Aisha Patel', action: 'submitted a timesheet for', target: 'Week 28', time: '10m ago', icon: '📝', color: 'indigo' },
-  { id: '2', actor: 'Client XYZ', action: 'approved timesheet for', target: 'Rahul Mehta', time: '1h ago', icon: '✅', color: 'emerald' },
-  { id: '3', actor: 'Dev Kumar', action: 'was added as a candidate for', target: 'TechCorp placement', time: '3h ago', icon: '👤', color: 'zinc' },
+  { id: '1', title: 'Aisha Patel', subtitle: 'Submitted a timesheet for Week 28', description: '', timeAgo: '10m ago', badgeLabel: 'Timesheet', icon: '📝', color: 'indigo', href: '#' },
+  { id: '2', title: 'Client XYZ', subtitle: 'Approved timesheet for Rahul Mehta', description: '', timeAgo: '1h ago', badgeLabel: 'Approval', icon: '✅', color: 'emerald', href: '#' },
+  { id: '3', title: 'Dev Kumar', subtitle: 'Was added as a candidate for TechCorp placement', description: '', timeAgo: '3h ago', badgeLabel: 'New Candidate', icon: '👤', color: 'zinc', href: '#' },
 ];
 
 const tasks: Task[] = [

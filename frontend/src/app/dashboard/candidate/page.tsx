@@ -100,7 +100,7 @@ export default function CandidateDashboard() {
     if (ts.status === 'submitted') {
       return { label: 'Submitted', badge: 'info' as const, icon: <SendHorizontal size={14} className="text-blue-600" />, desc: 'Awaiting review' };
     }
-    return { label: 'Draft', badge: 'secondary' as const, icon: <FileText size={14} className="text-zinc-500" />, desc: 'Not yet submitted' };
+    return { label: 'Draft', badge: 'default' as const, icon: <FileText size={14} className="text-zinc-500" />, desc: 'Not yet submitted' };
   };
 
   return (
