@@ -433,11 +433,11 @@ export default function TimesheetForm({
 
                 {showSubmitConfirm ? (
                   <div className="rounded-lg bg-blue-50 border border-blue-200 p-5 flex flex-col sm:flex-row items-center justify-between gap-4">
-                    <div>
-                      <h4 className="text-sm font-bold text-blue-900">Confirm Submission</h4>
-                      <p className="text-xs text-blue-800 mt-1">Once submitted, you cannot edit this timesheet unless it is rejected.</p>
+                    <div className="flex-1 min-w-0">
+                      <h4 className="text-sm font-bold text-blue-900">Confirm Timesheet</h4>
+                      <p className="text-xs text-blue-800 mt-1">Once created, you cannot edit this timesheet unless it is rejected.</p>
                     </div>
-                    <div className="flex items-center gap-3 w-full sm:w-auto">
+                    <div className="flex items-center gap-3 w-full sm:w-auto flex-shrink-0">
                       <button
                         type="button"
                         onClick={() => setShowSubmitConfirm(false)}
@@ -451,7 +451,7 @@ export default function TimesheetForm({
                         onClick={handleSubmitTimesheet}
                         className="flex-1 sm:flex-none rounded-md bg-blue-600 px-4 py-2 text-sm font-bold text-white shadow-sm hover:bg-blue-500 disabled:opacity-50 transition-colors"
                       >
-                        {submitting ? 'Submitting...' : 'Confirm Submit'}
+                        {submitting ? 'Creating...' : 'Confirm Timesheet'}
                       </button>
                     </div>
                   </div>
@@ -471,7 +471,7 @@ export default function TimesheetForm({
                       onClick={() => setShowSubmitConfirm(true)}
                       className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-md bg-indigo-600 px-5 py-2.5 text-sm font-bold text-white shadow-sm hover:bg-indigo-500 disabled:opacity-50 transition-colors"
                     >
-                      Submit for Approval
+                      Create Timesheet
                     </button>
                   </div>
                 )}

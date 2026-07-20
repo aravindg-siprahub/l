@@ -194,6 +194,7 @@ export default function TimesheetListTable({
 
       {shareTimesheetId && (
         <ShareManagerModal
+          timesheet={timesheets.find(t => t.id === shareTimesheetId)}
           onClose={() => setShareTimesheetId(null)}
           onConfirmShare={(payload) => onShareWithManager(shareTimesheetId, payload)}
           onSuccess={(updated) => {
