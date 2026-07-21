@@ -29,7 +29,25 @@ async function fetchWithAuth(path: string, options: RequestInit = {}) {
 
   if (!response.ok) {
     const errorBody = await response.json().catch(() => ({ detail: 'API error occurred.' }));
-    throw new Error(errorBody.detail || 'API request failed');
+    let errorMessage = 'API request failed';
+    
+    if (errorBody.detail) {
+      if (Array.isArray(errorBody.detail)) {
+        // FastAPI validation errors
+        errorMessage = errorBody.detail
+          .map((err: any) => {
+            const loc = err.loc ? err.loc[err.loc.length - 1] : '';
+            return loc ? `${loc}: ${err.msg}` : err.msg;
+          })
+          .join(', ');
+      } else if (typeof errorBody.detail === 'string') {
+        errorMessage = errorBody.detail;
+      } else {
+        errorMessage = JSON.stringify(errorBody.detail);
+      }
+    }
+    
+    throw new Error(errorMessage);
   }
 
   return response.json();
