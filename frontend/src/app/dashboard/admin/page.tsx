@@ -4,9 +4,16 @@ import { useState, useEffect, useMemo } from 'react';
 import { formatDistanceToNow } from 'date-fns';
 import StatsCard from '@/components/dashboard/StatsCard';
 import ActivityFeed, { ActivityItem } from '@/components/dashboard/ActivityFeed';
+import QuickActions, { QuickAction } from '@/components/dashboard/QuickActions';
 import { adminApi } from '@/lib/admin';
 import { UserOut } from '@/lib/auth';
-import { Users, User, Briefcase, Landmark, UserPlus, LogIn } from 'lucide-react';
+import { Users, User, Briefcase, Landmark, UserPlus, FileText, LogIn } from 'lucide-react';
+
+const actions: QuickAction[] = [
+  { label: 'Add User', icon: <UserPlus size={18} />, href: '/dashboard/admin/users', color: 'indigo', description: 'Create account' },
+  { label: 'Manage Users', icon: <Users size={18} />, href: '/dashboard/admin/users', color: 'cyan', description: 'Manage access' },
+  { label: 'Audit Logs', icon: <FileText size={18} />, href: '/dashboard/admin/audit', color: 'zinc', description: 'Activity trail' },
+];
 
 export default function AdminDashboard() {
   const [users, setUsers] = useState<UserOut[]>([]);
@@ -77,7 +84,7 @@ export default function AdminDashboard() {
 
     return events
       .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
-      .slice(0, 20) // Show top 20 recent activities
+      .slice(0, 10) // Show top 10 recent activities
       .map(event => ({
         ...event.item,
         timeAgo: formatDistanceToNow(event.timestamp, { addSuffix: true })
@@ -100,9 +107,14 @@ export default function AdminDashboard() {
             {stats.map(s => <StatsCard key={s.title} {...s} />)}
           </div>
 
-          {/* Main activity area */}
-          <div className="w-full">
-            <ActivityFeed items={activityFeed} scrollable={true} />
+          {/* Main grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2">
+              <ActivityFeed items={activityFeed} scrollable={true} />
+            </div>
+            <div>
+              <QuickActions actions={actions} />
+            </div>
           </div>
         </>
       )}
