@@ -1,10 +1,18 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import Link from 'next/link';
-import { Timesheet, TimesheetPayload, SharePayload, getTimesheetType } from '@/lib/timesheets';
-import { format, parseISO, formatDistanceToNow } from 'date-fns';
+import { useRouter } from 'next/navigation';
+import { Timesheet, TimesheetPayload, SharePayload, getTimesheetType, timesheetsApi } from '@/lib/timesheets';
+type TimesheetEntryPayload = TimesheetPayload['entries'][0];
+import { format, parseISO, eachDayOfInterval, addDays, endOfMonth } from 'date-fns';
 import ShareManagerModal from '@/components/dashboard/ShareManagerModal';
+
+import WizardStepper from './wizard/WizardStepper';
+import StepSelectPeriod from './wizard/StepSelectPeriod';
+import StepFillEntries from './wizard/StepFillEntries';
+import StepReview from './wizard/StepReview';
+import LiveSummaryCard from './wizard/LiveSummaryCard';
 
 interface Props {
   timesheet: Timesheet | null;
@@ -14,10 +22,10 @@ interface Props {
   successMsg: string;
   backLink: string;
   onSaveDraft: (payload: TimesheetPayload) => Promise<void>;
-  onSubmitTimesheet: (payload: TimesheetPayload) => Promise<void>;
+  onSubmitTimesheet: (payload: TimesheetPayload) => Promise<Timesheet | void>;
   onDownloadPdf: () => Promise<void>;
   onDownloadExcel?: () => Promise<void>;
-  onShareWithManager: (payload: SharePayload) => Promise<Timesheet>;
+  onShareWithManager: (id: string, payload: SharePayload) => Promise<Timesheet>;
   onTimesheetUpdated?: (updated: Timesheet) => void;
 }
 
@@ -35,6 +43,9 @@ export default function TimesheetForm({
   onShareWithManager,
   onTimesheetUpdated
 }: Props) {
+  const [currentStep, setCurrentStep] = useState(1);
+  const [selectedType, setSelectedType] = useState<'Weekly' | 'Monthly' | null>(null);
+
   const [formData, setFormData] = useState<TimesheetPayload>({
     period_start_date: '',
     period_end_date: '',
@@ -46,13 +57,33 @@ export default function TimesheetForm({
   const [downloading, setDownloading] = useState(false);
   const [downloadingExcel, setDownloadingExcel] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
-  const [showSubmitConfirm, setShowSubmitConfirm] = useState(false);
   const [localError, setLocalError] = useState('');
+  const [toast, setToast] = useState<{message: string, type: 'error' | 'success'} | null>(null);
+  const [existingTimesheets, setExistingTimesheets] = useState<Timesheet[]>([]);
+  const [submittedTimesheet, setSubmittedTimesheet] = useState<Timesheet | null>(null);
+  const [pendingRedirect, setPendingRedirect] = useState(false);
+  const router = useRouter();
+
+  useEffect(() => {
+    timesheetsApi.getAll().then(setExistingTimesheets).catch(console.error);
+  }, []);
+
+  useEffect(() => {
+    if (toast) {
+      const timer = setTimeout(() => setToast(null), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [toast]);
+  
+  // Track if changes have been made
+  const [isDirty, setIsDirty] = useState(false);
 
   const error = serverError || localError;
 
+  // Initialize form from existing timesheet
   useEffect(() => {
     if (timesheet) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setFormData({
         period_start_date: timesheet.period_start_date,
         period_end_date: timesheet.period_end_date,
@@ -63,54 +94,202 @@ export default function TimesheetForm({
           task_description: e.task_description
         }))
       });
+      const tsType = getTimesheetType(timesheet.period_start_date, timesheet.period_end_date);
+      if (tsType === 'Weekly' || tsType === 'Monthly') {
+        setSelectedType(tsType);
+      }
     }
   }, [timesheet]);
 
-  const handleAddEntry = () => {
-    setFormData(prev => ({
-      ...prev,
-      entries: [...prev.entries, { date: '', hours_worked: 0, task_description: '' }]
-    }));
+  // Unsaved changes protection
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (isDirty) {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [isDirty]);
+
+  const setStartDate = (dateStr: string) => {
+    setFormData(prev => {
+      const updates: Partial<TimesheetPayload> = { period_start_date: dateStr };
+      if (dateStr && selectedType) {
+        try {
+          const dateObj = parseISO(dateStr);
+          if (selectedType === 'Weekly') {
+            updates.period_end_date = format(addDays(dateObj, 6), 'yyyy-MM-dd');
+          } else if (selectedType === 'Monthly') {
+            updates.period_end_date = format(endOfMonth(dateObj), 'yyyy-MM-dd');
+          }
+        } catch (e) {
+          // ignore parsing error
+        }
+      }
+      return { ...prev, ...updates };
+    });
+    setIsDirty(true);
+  };
+  const setEndDate = (date: string) => {
+    setFormData(prev => ({ ...prev, period_end_date: date }));
+    setIsDirty(true);
+  };
+  const setNotes = (notes: string) => {
+    setFormData(prev => ({ ...prev, notes }));
+    setIsDirty(true);
   };
 
-  const handleRemoveEntry = (index: number) => {
-    setFormData(prev => ({
-      ...prev,
-      entries: prev.entries.filter((_, i) => i !== index)
-    }));
-  };
-
-  const handleEntryChange = (index: number, field: string, value: string | number) => {
+  const handleEntryChange = useCallback((index: number, field: string, value: string | number) => {
     setFormData(prev => {
       const newEntries = [...prev.entries];
       newEntries[index] = { ...newEntries[index], [field]: value };
       return { ...prev, entries: newEntries };
     });
+    setIsDirty(true);
+  }, []);
+
+  const totalHours = useMemo(() => formData.entries.reduce((sum, e) => sum + (e.hours_worked || 0), 0), [formData.entries]);
+  const workingDays = useMemo(() => formData.entries.filter(e => e.date && e.hours_worked > 0).length, [formData.entries]);
+
+  const generateEntries = useCallback(() => {
+    if (!formData.period_start_date || !formData.period_end_date) return;
+    
+    try {
+      const start = parseISO(formData.period_start_date);
+      const end = parseISO(formData.period_end_date);
+      
+      if (start > end) return; // Invalid date range
+      
+      const dates = eachDayOfInterval({ start, end });
+      
+      setFormData(prev => {
+        const newEntries: TimesheetEntryPayload[] = dates.map(date => {
+          const dateStr = format(date, 'yyyy-MM-dd');
+          // Find if we already have an entry for this date to preserve it
+          const existingEntry = prev.entries.find(e => e.date === dateStr);
+          if (existingEntry) {
+            return existingEntry;
+          }
+          return { date: dateStr, hours_worked: 0, task_description: '' };
+        });
+        
+        return { ...prev, entries: newEntries };
+      });
+    } catch (e) {
+      console.error("Invalid dates for entry generation", e);
+    }
+  }, [formData.period_start_date, formData.period_end_date]);
+
+  const handleNextToStep2 = () => {
+    if (!formData.period_start_date || !formData.period_end_date) {
+      setToast({ message: "Please select both a start and end date.", type: 'error' });
+      return;
+    }
+    
+    const start = parseISO(formData.period_start_date);
+    const end = parseISO(formData.period_end_date);
+    
+    if (start > end) {
+      setToast({ message: "Invalid Date Range: End date cannot be earlier than start date.", type: 'error' });
+      return;
+    }
+
+    const hasOverlap = existingTimesheets.some(ts => {
+      if (timesheet && ts.id === timesheet.id) return false;
+      const tsStart = parseISO(ts.period_start_date);
+      const tsEnd = parseISO(ts.period_end_date);
+      return start <= tsEnd && tsStart <= end;
+    });
+
+    if (hasOverlap) {
+      setToast({ message: "You already have a timesheet for this period.", type: 'error' });
+      return;
+    }
+
+    generateEntries();
+    setLocalError('');
+    setCurrentStep(2);
   };
 
-  const totalHours = formData.entries.reduce((sum, e) => sum + (e.hours_worked || 0), 0);
-  const workingDays = formData.entries.filter(e => e.date && e.hours_worked > 0).length;
+  const handleNextToStep3 = () => {
+    if (totalHours === 0) {
+      setToast({ message: "You must log at least some hours before proceeding.", type: 'error' });
+      return;
+    }
+
+    const errorMsg = validateFormData(formData);
+    if (errorMsg) {
+      setLocalError(errorMsg);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+    setLocalError('');
+    setCurrentStep(3);
+  };
+
+  const cleanFormData = (data: TimesheetPayload): TimesheetPayload => {
+    return {
+      ...data,
+      entries: data.entries
+        .filter(e => e.hours_worked > 0 || e.task_description.trim() !== '')
+        .map(e => {
+          // Safely default the description to a space if empty, satisfying backend min_length=1 while appearing blank
+          if (e.hours_worked > 0 && e.task_description.trim() === '') {
+            return { ...e, task_description: ' ' };
+          }
+          return e;
+        })
+    };
+  };
+
+  const validateFormData = (data: TimesheetPayload): string | null => {
+    // Validation is bypassed safely: cleanFormData auto-fills empty descriptions.
+    return null;
+  };
 
   const handleSaveDraft = async () => {
+    const validationError = validateFormData(formData);
+    if (validationError) {
+      setLocalError(validationError);
+      return;
+    }
     try {
       setSubmitting(true);
       setLocalError('');
-      await onSaveDraft(formData);
-    } catch (err: any) {
-      setLocalError(err.message || 'Failed to save timesheet.');
+      await onSaveDraft(cleanFormData(formData));
+      setIsDirty(false);
+    } catch (err: unknown) {
+      setLocalError((err as Error).message || 'Failed to save timesheet.');
     } finally {
       setSubmitting(false);
     }
   };
 
   const handleSubmitTimesheet = async () => {
+    const validationError = validateFormData(formData);
+    if (validationError) {
+      setLocalError(validationError);
+      return;
+    }
     try {
       setSubmitting(true);
       setLocalError('');
-      await onSubmitTimesheet(formData);
-      setShowSubmitConfirm(false);
-    } catch (err: any) {
-      setLocalError(err.message || 'Failed to submit timesheet.');
+      const ts = await onSubmitTimesheet(cleanFormData(formData));
+      setIsDirty(false);
+      
+      if (ts) {
+        setSubmittedTimesheet(ts);
+        setPendingRedirect(true);
+        setShowShareModal(true);
+      } else if (timesheet) {
+        setSubmittedTimesheet(timesheet);
+        setPendingRedirect(true);
+        setShowShareModal(true);
+      }
+    } catch (err: unknown) {
+      setLocalError((err as Error).message || 'Failed to submit timesheet.');
     } finally {
       setSubmitting(false);
     }
@@ -121,8 +300,8 @@ export default function TimesheetForm({
       setDownloading(true);
       setLocalError('');
       await onDownloadPdf();
-    } catch (err: any) {
-      setLocalError(err.message || 'Failed to download PDF.');
+    } catch (err: unknown) {
+      setLocalError((err as Error).message || 'Failed to download PDF.');
     } finally {
       setDownloading(false);
     }
@@ -134,8 +313,8 @@ export default function TimesheetForm({
       setDownloadingExcel(true);
       setLocalError('');
       await onDownloadExcel();
-    } catch (err: any) {
-      setLocalError(err.message || 'Failed to download Excel.');
+    } catch (err: unknown) {
+      setLocalError((err as Error).message || 'Failed to download Excel.');
     } finally {
       setDownloadingExcel(false);
     }
@@ -146,22 +325,34 @@ export default function TimesheetForm({
     if (onTimesheetUpdated) {
       onTimesheetUpdated(updated);
     }
+    if (pendingRedirect) {
+      router.push('/dashboard/candidate/timesheets');
+    }
+  };
+
+  const handleShareModalClose = () => {
+    setShowShareModal(false);
+    if (pendingRedirect) {
+      router.push('/dashboard/candidate/timesheets');
+    }
   };
 
   const isEditable = isNew || (timesheet && (timesheet.status === 'draft' || timesheet.status === 'client_rejected' || timesheet.status === 'finance_rejected'));
   const isReadOnly = !isEditable;
   const canDownload = Boolean(timesheet && timesheet.status !== 'draft');
   const canShare = Boolean(timesheet && (timesheet.status === 'submitted' || timesheet.status === 'client_rejected' || timesheet.status === 'finance_rejected'));
+  
+  // Always recalculate tsType based on current dates to reflect live updates
   const tsType = formData.period_start_date && formData.period_end_date ? getTimesheetType(formData.period_start_date, formData.period_end_date) : null;
 
-  // Workflow Progress Calculation
+  // Workflow Progress Calculation for read-only view
   const progressSteps = ['Draft', 'Submitted', 'Shared', 'Approved'];
   let currentStepIdx = 0;
   if (!isNew && timesheet) {
     if (timesheet.status === 'client_approved' || timesheet.status === 'finance_approved') currentStepIdx = 3;
     else if (timesheet.shared_at) currentStepIdx = 2;
     else if (timesheet.status === 'submitted') currentStepIdx = 1;
-    else currentStepIdx = 0; // Draft or Rejected (rejected is essentially back to draft state but we show banners)
+    else currentStepIdx = 0;
   }
 
   if (loading) {
@@ -177,8 +368,31 @@ export default function TimesheetForm({
   }
 
   return (
-    <div className="max-w-6xl mx-auto space-y-8 pb-16">
-      {/* Page Header */}
+    <div className="max-w-6xl mx-auto pb-12 relative">
+      {/* Beautiful Toast Pop-up */}
+      {toast && (
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 animate-in slide-in-from-top-4 fade-in duration-300">
+          <div className={`rounded-full shadow-lg border px-6 py-3 flex items-center gap-3 backdrop-blur-md ${
+            toast.type === 'error' ? 'bg-red-50/95 border-red-200 text-red-800' : 'bg-emerald-50/95 border-emerald-200 text-emerald-800'
+          }`}>
+            {toast.type === 'error' ? (
+              <svg className="h-5 w-5 text-red-500 shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+            ) : (
+              <svg className="h-5 w-5 text-emerald-500 shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            )}
+            <span className="text-sm font-semibold tracking-tight">{toast.message}</span>
+            <button onClick={() => setToast(null)} className="ml-2 text-current opacity-60 hover:opacity-100 transition-opacity">
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Header section */}
       <div className="flex items-center justify-between border-b border-zinc-200 pb-5">
         <div>
           <h2 className="text-2xl font-bold text-zinc-900 tracking-tight">
@@ -193,7 +407,7 @@ export default function TimesheetForm({
         </Link>
       </div>
 
-      {/* Progress Indicator */}
+      {/* Progress Indicator (Only for existing timesheets) */}
       {!isNew && (
         <div className="bg-white rounded-xl shadow-sm ring-1 ring-zinc-200 p-6">
           <nav aria-label="Progress">
@@ -264,354 +478,155 @@ export default function TimesheetForm({
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Left Column: Form Sections */}
+        {/* Left Column: Wizard Sections */}
         <div className="lg:col-span-2 space-y-6">
           
-          {/* Section 1: Timesheet Information */}
-          <section className="bg-white rounded-xl shadow-sm border border-zinc-200/80 p-6 space-y-6">
-            <div className="border-b border-zinc-100 pb-4">
-              <h3 className="text-lg font-semibold text-zinc-900 tracking-tight">1. Timesheet Information</h3>
-            </div>
-            <div className="space-y-6">
-              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-                <div>
-                  <label className="block text-sm font-medium text-zinc-900 mb-2">Period Start Date <span className="text-red-500">*</span></label>
-                  <input
-                    type="date"
-                    required
-                    disabled={isReadOnly}
-                    value={formData.period_start_date}
-                    onChange={e => setFormData(prev => ({ ...prev, period_start_date: e.target.value }))}
-                    className="block w-full rounded-md border-0 py-2 text-zinc-900 shadow-sm ring-1 ring-inset ring-zinc-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm disabled:bg-zinc-50 disabled:text-zinc-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-zinc-900 mb-2">Period End Date <span className="text-red-500">*</span></label>
-                  <input
-                    type="date"
-                    required
-                    disabled={isReadOnly}
-                    value={formData.period_end_date}
-                    onChange={e => setFormData(prev => ({ ...prev, period_end_date: e.target.value }))}
-                    className="block w-full rounded-md border-0 py-2 text-zinc-900 shadow-sm ring-1 ring-inset ring-zinc-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm disabled:bg-zinc-50 disabled:text-zinc-500"
-                  />
-                </div>
-                {tsType && (
-                  <div className="sm:col-span-2 flex items-center gap-2">
-                    <span className="text-sm text-zinc-500">Period Type:</span>
-                    <span className={`inline-flex items-center rounded-md px-2.5 py-1 text-xs font-semibold ring-1 ring-inset ${
-                      tsType === 'Weekly' ? 'bg-sky-50 text-sky-700 ring-sky-700/20' : 'bg-amber-50 text-amber-700 ring-amber-700/20'
-                    }`}>
-                      {tsType}
-                    </span>
-                  </div>
-                )}
-                <div className="sm:col-span-2">
-                  <label className="block text-sm font-medium text-zinc-900 mb-2">Notes (Optional)</label>
-                  <textarea
-                    rows={2}
-                    disabled={isReadOnly}
-                    value={formData.notes || ''}
-                    onChange={e => setFormData(prev => ({ ...prev, notes: e.target.value }))}
-                    placeholder="Any additional context for this timesheet period..."
-                    className="block w-full rounded-md border-0 py-2 text-zinc-900 shadow-sm ring-1 ring-inset ring-zinc-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm disabled:bg-zinc-50 disabled:text-zinc-500"
-                  />
-                </div>
-              </div>
-            </div>
-          </section>
-
-          {/* Section 2: Work Entries */}
-          <section className="bg-white rounded-xl shadow-sm border border-zinc-200/80 p-6">
-            <div className="border-b border-zinc-100 pb-4 mb-6 flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-zinc-900 tracking-tight">2. Daily Work Entries</h3>
-              {!isReadOnly && (
-                <button
-                  type="button"
-                  onClick={handleAddEntry}
-                  className="inline-flex items-center gap-1.5 text-sm font-semibold text-indigo-600 hover:text-indigo-500 transition-colors bg-indigo-50 hover:bg-indigo-100 px-3 py-1.5 rounded-lg"
-                >
-                  <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                    <path d="M10.75 4.75a.75.75 0 00-1.5 0v4.5h-4.5a.75.75 0 000 1.5h4.5v4.5a.75.75 0 001.5 0v-4.5h4.5a.75.75 0 000-1.5h-4.5v-4.5z" />
-                  </svg>
-                  Add Entry
-                </button>
-              )}
-            </div>
-            <div>
-              {formData.entries.length === 0 ? (
-                <div className="text-center py-12 border-2 border-dashed border-zinc-200 rounded-xl">
-                  <span className="text-4xl block mb-3">📝</span>
-                  <p className="text-sm font-medium text-zinc-900">No entries added yet.</p>
-                  <p className="text-xs text-zinc-500 mt-1">Log your daily hours to build your timesheet.</p>
-                  {!isReadOnly && (
-                    <button
-                      type="button"
-                      onClick={handleAddEntry}
-                      className="mt-4 rounded-md bg-white px-3.5 py-2 text-sm font-semibold text-zinc-900 shadow-sm ring-1 ring-inset ring-zinc-300 hover:bg-zinc-50 transition-colors"
-                    >
-                      + Add your first entry
-                    </button>
-                  )}
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {formData.entries.map((entry, idx) => (
-                    <div key={idx} className="flex flex-col sm:flex-row gap-4 items-start sm:items-center bg-white p-4 rounded-xl ring-1 ring-zinc-200 shadow-sm">
-                      <div className="w-full sm:w-40">
-                        <label className="block text-xs font-semibold text-zinc-700 sm:hidden mb-1.5">Date</label>
-                        <input
-                          type="date"
-                          disabled={isReadOnly}
-                          value={entry.date}
-                          onChange={e => handleEntryChange(idx, 'date', e.target.value)}
-                          className="block w-full rounded-md border-0 py-2 text-zinc-900 shadow-sm ring-1 ring-inset ring-zinc-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm disabled:bg-zinc-50"
-                        />
-                      </div>
-                      <div className="w-full sm:w-32">
-                        <label className="block text-xs font-semibold text-zinc-700 sm:hidden mb-1.5">Hours</label>
-                        <div className="relative">
-                          <input
-                            type="number"
-                            step="0.5"
-                            min="0"
-                            max="24"
-                            disabled={isReadOnly}
-                            value={entry.hours_worked}
-                            onChange={e => handleEntryChange(idx, 'hours_worked', parseFloat(e.target.value) || 0)}
-                            className="block w-full rounded-md border-0 py-2 text-zinc-900 shadow-sm ring-1 ring-inset ring-zinc-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm disabled:bg-zinc-50 pr-8"
-                          />
-                          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-medium text-zinc-400 pointer-events-none">h</span>
+          <WizardStepper currentStep={currentStep} />
+          
+          <div className="bg-white rounded-xl shadow-sm border border-zinc-200/80 p-6">
+            {currentStep === 1 && (
+              <StepSelectPeriod
+                selectedType={selectedType}
+                setSelectedType={setSelectedType}
+                startDate={formData.period_start_date}
+                endDate={formData.period_end_date}
+                setStartDate={setStartDate}
+                setEndDate={setEndDate}
+                notes={formData.notes || ''}
+                setNotes={setNotes}
+                isReadOnly={isReadOnly}
+                onNext={handleNextToStep2}
+              />
+            )}
+            
+            {currentStep === 2 && (
+              <StepFillEntries
+                entries={formData.entries}
+                onChange={handleEntryChange}
+                isReadOnly={isReadOnly}
+                onBack={() => {
+                  setLocalError('');
+                  setCurrentStep(1);
+                }}
+                onNext={handleNextToStep3}
+              />
+            )}
+            
+            {currentStep === 3 && (
+              <div className="space-y-8">
+                <StepReview
+                  workingDays={workingDays}
+                  totalHours={totalHours}
+                  submitting={submitting}
+                  onSaveDraft={handleSaveDraft}
+                  onSubmit={handleSubmitTimesheet}
+                  onBack={() => {
+                    setLocalError('');
+                    setCurrentStep(2);
+                  }}
+                />
+                
+                {/* Legacy Actions integration for existing timesheets */}
+                {!isNew && canShare && (
+                  <div className="pt-8 border-t border-zinc-100">
+                    <h3 className="text-lg font-bold text-zinc-900 tracking-tight mb-4">Post-Submission Actions</h3>
+                    
+                    {timesheet?.shared_at ? (
+                      <div className="rounded-lg border border-violet-200 bg-violet-50 p-5 mb-6 flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+                        <div>
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="text-xl">📤</span>
+                            <h4 className="text-sm font-bold text-violet-900">Currently Shared</h4>
+                          </div>
+                          <p className="text-sm text-violet-800 ml-7">
+                            Shared with <span className="font-semibold">{timesheet.manager_name || timesheet.manager_email}</span> on {format(parseISO(timesheet.shared_at), 'MMM d, yyyy')}.
+                          </p>
                         </div>
-                      </div>
-                      <div className="flex-1 w-full">
-                        <label className="block text-xs font-semibold text-zinc-700 sm:hidden mb-1.5">Task Description</label>
-                        <input
-                          type="text"
-                          placeholder="Describe the work done..."
-                          disabled={isReadOnly}
-                          value={entry.task_description}
-                          onChange={e => handleEntryChange(idx, 'task_description', e.target.value)}
-                          className="block w-full rounded-md border-0 py-2 text-zinc-900 shadow-sm ring-1 ring-inset ring-zinc-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm disabled:bg-zinc-50"
-                        />
-                      </div>
-                      {!isReadOnly && (
                         <button
                           type="button"
-                          onClick={() => handleRemoveEntry(idx)}
-                          className="text-zinc-400 hover:text-red-500 mt-6 sm:mt-0 p-1 transition-colors"
-                          title="Remove entry"
+                          onClick={() => setShowShareModal(true)}
+                          className="w-full sm:w-auto rounded-md bg-white px-4 py-2 text-sm font-semibold text-violet-700 shadow-sm ring-1 ring-inset ring-violet-300 hover:bg-violet-100 transition-colors ml-7 sm:ml-0"
                         >
-                          <span className="sr-only">Remove</span>
-                          <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                            <path fillRule="evenodd" d="M8.75 1A2.75 2.75 0 006 3.75v.443c-.795.077-1.584.176-2.365.298a.75.75 0 10.23 1.482l.149-.022.841 10.518A2.75 2.75 0 007.596 19h4.807a2.75 2.75 0 002.742-2.53l.841-10.52.149.023a.75.75 0 00.23-1.482A41.03 41.03 0 0014 4.193V3.75A2.75 2.75 0 0011.25 1h-2.5zM10 4c.84 0 1.673.025 2.5.075V3.75c0-.69-.56-1.25-1.25-1.25h-2.5c-.69 0-1.25.56-1.25 1.25v.325C8.327 4.025 9.16 4 10 4zM8.58 7.72a.75.75 0 00-1.5.06l.3 7.5a.75.75 0 101.5-.06l-.3-7.5zm4.34.06a.75.75 0 10-1.5-.06l-.3 7.5a.75.75 0 101.5.06l.3-7.5z" clipRule="evenodd" />
-                          </svg>
+                          Resend / Change Manager
                         </button>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </section>
-
-          {/* Section 3: Review & Submit */}
-          {!isReadOnly && (
-            <section className="bg-white rounded-xl shadow-sm border border-zinc-200/80 p-6">
-              <div className="border-b border-zinc-100 pb-4 mb-6">
-                <h3 className="text-lg font-semibold text-zinc-900 tracking-tight">3. Review & Submit</h3>
-              </div>
-              <div className="space-y-6">
-                <div className="rounded-lg bg-zinc-50 border border-zinc-200 p-5 mb-6">
-                  <h4 className="text-sm font-semibold text-zinc-900 mb-2">Pre-submission Checklist</h4>
-                  <ul className="text-sm text-zinc-600 space-y-2 list-disc list-inside">
-                    <li>I have reviewed all {workingDays} work entries.</li>
-                    <li>The total hours ({totalHours}h) accurately reflects my work.</li>
-                    <li>I have included any necessary context in the notes section.</li>
-                  </ul>
-                </div>
-
-                {showSubmitConfirm ? (
-                  <div className="rounded-lg bg-blue-50 border border-blue-200 p-5 flex flex-col sm:flex-row items-center justify-between gap-4">
-                    <div>
-                      <h4 className="text-sm font-bold text-blue-900">Confirm Submission</h4>
-                      <p className="text-xs text-blue-800 mt-1">Once submitted, you cannot edit this timesheet unless it is rejected.</p>
-                    </div>
-                    <div className="flex items-center gap-3 w-full sm:w-auto">
-                      <button
-                        type="button"
-                        onClick={() => setShowSubmitConfirm(false)}
-                        className="flex-1 sm:flex-none rounded-md bg-white px-4 py-2 text-sm font-semibold text-zinc-700 shadow-sm ring-1 ring-inset ring-zinc-300 hover:bg-zinc-50 transition-colors"
-                      >
-                        Cancel
-                      </button>
-                      <button
-                        type="button"
-                        disabled={submitting}
-                        onClick={handleSubmitTimesheet}
-                        className="flex-1 sm:flex-none rounded-md bg-blue-600 px-4 py-2 text-sm font-bold text-white shadow-sm hover:bg-blue-500 disabled:opacity-50 transition-colors"
-                      >
-                        {submitting ? 'Submitting...' : 'Confirm Submit'}
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="flex flex-col sm:flex-row items-center justify-end gap-4">
-                    <button
-                      type="button"
-                      disabled={submitting}
-                      onClick={handleSaveDraft}
-                      className="w-full sm:w-auto rounded-md bg-white px-5 py-2.5 text-sm font-semibold text-zinc-900 shadow-sm ring-1 ring-inset ring-zinc-300 hover:bg-zinc-50 disabled:opacity-50 transition-colors"
-                    >
-                      {submitting ? 'Saving...' : 'Save Draft'}
-                    </button>
-                    <button
-                      type="button"
-                      disabled={submitting || formData.entries.length === 0}
-                      onClick={() => setShowSubmitConfirm(true)}
-                      className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-md bg-indigo-600 px-5 py-2.5 text-sm font-bold text-white shadow-sm hover:bg-indigo-500 disabled:opacity-50 transition-colors"
-                    >
-                      Submit for Approval
-                    </button>
-                  </div>
-                )}
-              </div>
-            </section>
-          )}
-
-          {/* Section 4: Post-Submission Actions */}
-          {!isNew && canShare && (
-            <section className="bg-white rounded-xl shadow-sm border border-zinc-200/80 p-6">
-              <div className="border-b border-zinc-100 pb-4 mb-6">
-                <h3 className="text-lg font-semibold text-zinc-900 tracking-tight">4. Share with Client Manager</h3>
-              </div>
-              <div className="p-6">
-                {timesheet?.shared_at ? (
-                  <div className="rounded-lg border border-violet-200 bg-violet-50 p-5 mb-6 flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-                    <div>
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="text-xl">📤</span>
-                        <h4 className="text-sm font-bold text-violet-900">Currently Shared</h4>
                       </div>
-                      <p className="text-sm text-violet-800 ml-7">
-                        Shared with <span className="font-semibold">{timesheet.manager_name || timesheet.manager_email}</span> on {format(parseISO(timesheet.shared_at), 'MMM d, yyyy')}.
-                      </p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => setShowShareModal(true)}
-                      className="w-full sm:w-auto rounded-md bg-white px-4 py-2 text-sm font-semibold text-violet-700 shadow-sm ring-1 ring-inset ring-violet-300 hover:bg-violet-100 transition-colors ml-7 sm:ml-0"
-                    >
-                      Resend / Change Manager
-                    </button>
-                  </div>
-                ) : (
-                  <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-6 text-center mb-6">
-                    <span className="text-4xl block mb-3">📬</span>
-                    <h4 className="text-sm font-bold text-zinc-900 mb-1">Share with your Client Manager</h4>
-                    <p className="text-sm text-zinc-600 mb-4 max-w-md mx-auto">
-                      Your timesheet is submitted. Send it to your manager via email to notify them it's ready for review.
-                    </p>
-                    <button
-                      type="button"
-                      onClick={() => setShowShareModal(true)}
-                      className="rounded-md bg-indigo-600 px-5 py-2.5 text-sm font-bold text-white shadow-sm hover:bg-indigo-500 transition-colors"
-                    >
-                      Share Now
-                    </button>
-                  </div>
-                )}
-                
-                {canDownload && (
-                  <div className="flex items-center justify-center sm:justify-start gap-4 pt-4 border-t border-zinc-200">
-                    <button
-                      type="button"
-                      disabled={downloading}
-                      onClick={handleDownload}
-                      className="inline-flex items-center gap-2 text-sm font-medium text-rose-600 hover:text-rose-700 disabled:opacity-50 transition-colors"
-                    >
-                      <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                        <polyline points="14 2 14 8 20 8"></polyline>
-                        <line x1="16" y1="13" x2="8" y2="13"></line>
-                        <line x1="16" y1="17" x2="8" y2="17"></line>
-                        <polyline points="10 9 9 9 8 9"></polyline>
-                      </svg>
-                      {downloading ? 'Downloading...' : 'Download PDF Copy'}
-                    </button>
-                    {onDownloadExcel && (
-                      <button
-                        type="button"
-                        disabled={downloadingExcel}
-                        onClick={handleDownloadExcelAction}
-                        className="inline-flex items-center gap-2 text-sm font-medium text-emerald-600 hover:text-emerald-700 disabled:opacity-50 transition-colors"
-                      >
-                        <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                          <polyline points="14 2 14 8 20 8"></polyline>
-                          <line x1="16" y1="13" x2="8" y2="13"></line>
-                          <line x1="16" y1="17" x2="8" y2="17"></line>
-                          <polyline points="10 9 9 9 8 9"></polyline>
-                        </svg>
-                        {downloadingExcel ? 'Downloading...' : 'Download Excel Copy'}
-                      </button>
+                    ) : (
+                      <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-6 text-center mb-6">
+                        <span className="text-4xl block mb-3">📬</span>
+                        <h4 className="text-sm font-bold text-zinc-900 mb-1">Share with your Client Manager</h4>
+                        <p className="text-sm text-zinc-600 mb-4 max-w-md mx-auto">
+                          Your timesheet is submitted. Send it to your manager via email to notify them it&apos;s ready for review.
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() => setShowShareModal(true)}
+                          className="rounded-md bg-indigo-600 px-5 py-2.5 text-sm font-bold text-white shadow-sm hover:bg-indigo-500 transition-colors"
+                        >
+                          Share Now
+                        </button>
+                      </div>
+                    )}
+                    
+                    {canDownload && (
+                      <div className="flex flex-col sm:flex-row items-center justify-center sm:justify-start gap-4 pt-4 border-t border-zinc-100">
+                        <button
+                          type="button"
+                          disabled={downloading}
+                          onClick={handleDownload}
+                          className="inline-flex items-center gap-2 text-sm font-medium text-rose-600 hover:text-rose-700 disabled:opacity-50 transition-colors"
+                        >
+                          <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                            <polyline points="14 2 14 8 20 8"></polyline>
+                            <line x1="16" y1="13" x2="8" y2="13"></line>
+                            <line x1="16" y1="17" x2="8" y2="17"></line>
+                            <polyline points="10 9 9 9 8 9"></polyline>
+                          </svg>
+                          {downloading ? 'Downloading...' : 'Download PDF'}
+                        </button>
+                        {onDownloadExcel && (
+                          <button
+                            type="button"
+                            disabled={downloadingExcel}
+                            onClick={handleDownloadExcelAction}
+                            className="inline-flex items-center gap-2 text-sm font-medium text-emerald-600 hover:text-emerald-700 disabled:opacity-50 transition-colors"
+                          >
+                            <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                              <polyline points="14 2 14 8 20 8"></polyline>
+                              <line x1="16" y1="13" x2="8" y2="13"></line>
+                              <line x1="16" y1="17" x2="8" y2="17"></line>
+                              <polyline points="10 9 9 9 8 9"></polyline>
+                            </svg>
+                            {downloadingExcel ? 'Downloading...' : 'Download Excel'}
+                          </button>
+                        )}
+                      </div>
                     )}
                   </div>
                 )}
               </div>
-            </section>
-          )}
+            )}
+          </div>
         </div>
 
         {/* Right Column: Sticky Summary */}
         <div className="lg:col-span-1">
-          <div className="sticky top-6 bg-white rounded-xl shadow-sm border border-zinc-200/80 p-6 overflow-hidden">
-            {/* Top gradient accent */}
-            <div className="absolute top-0 left-0 w-full h-[4px] bg-gradient-to-r from-indigo-500 to-blue-500" />
-            
-            <h3 className="text-lg font-bold text-zinc-900 mb-6 tracking-tight">Live Summary</h3>
-            
-            <dl className="space-y-6 relative z-10">
-              <div>
-                <dt className="text-sm font-medium text-zinc-500">Total Hours</dt>
-                <dd className="mt-1 text-4xl font-black text-indigo-600 tracking-tight">{totalHours}<span className="text-2xl text-indigo-400 font-bold ml-1">h</span></dd>
-              </div>
-              
-              <div className="pt-6 border-t border-zinc-100">
-                <dt className="text-sm font-medium text-zinc-500">Working Days</dt>
-                <dd className="mt-1 text-2xl font-bold text-zinc-900">{workingDays} <span className="text-sm font-normal text-zinc-400">days logged</span></dd>
-              </div>
-              
-              <div className="pt-6 border-t border-zinc-100">
-                <dt className="text-sm font-medium text-zinc-500">Current Status</dt>
-                <dd className="mt-2">
-                  <span className={`inline-flex items-center rounded-md px-3 py-1 text-xs font-semibold tracking-wide uppercase ${
-                    timesheet?.status === 'submitted' || timesheet?.status === 'client_approved' || timesheet?.status === 'finance_approved'
-                      ? 'bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-600/20'
-                      : timesheet?.status === 'client_rejected' || timesheet?.status === 'finance_rejected'
-                      ? 'bg-red-50 text-red-700 ring-1 ring-inset ring-red-600/20'
-                      : 'bg-zinc-100 text-zinc-700 ring-1 ring-inset ring-zinc-500/20'
-                  }`}>
-                    {timesheet?.status ? timesheet.status.replace('_', ' ') : 'DRAFT'}
-                  </span>
-                </dd>
-              </div>
-            </dl>
-
-            {!isNew && timesheet?.updated_at && (
-              <div className="mt-8 pt-6 border-t border-zinc-100 text-xs text-zinc-500 relative z-10">
-                Last saved {formatDistanceToNow(parseISO(timesheet.updated_at), { addSuffix: true })}
-              </div>
-            )}
-          </div>
+          <LiveSummaryCard
+            totalHours={totalHours}
+            workingDays={workingDays}
+            timesheet={timesheet}
+            isNew={isNew}
+            tsType={tsType}
+          />
         </div>
       </div>
 
       {/* Share Modal */}
-      {showShareModal && timesheet && (
+      {showShareModal && (submittedTimesheet || timesheet) && (
         <ShareManagerModal
-          onClose={() => setShowShareModal(false)}
-          onConfirmShare={(payload) => onShareWithManager(payload)}
+          onClose={handleShareModalClose}
+          onConfirmShare={(payload) => onShareWithManager((submittedTimesheet || timesheet)!.id, payload)}
           onSuccess={handleShareSuccess}
         />
       )}

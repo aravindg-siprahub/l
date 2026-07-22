@@ -51,8 +51,12 @@ export default function TimesheetFormPage() {
     } else {
       await timesheetsApi.update(currentId, payload);
     }
-    await timesheetsApi.submit(currentId);
-    router.push('/dashboard/candidate/timesheets');
+    const submittedTs = await timesheetsApi.submit(currentId);
+    
+    // We update the local timesheet state so the modal has the right data
+    setTimesheet(submittedTs);
+    // Return it so the form can open the share modal instead of redirecting
+    return submittedTs;
   };
 
   const handleDownloadPdf = async () => {
@@ -81,9 +85,9 @@ export default function TimesheetFormPage() {
     URL.revokeObjectURL(url);
   };
 
-  const handleShareWithManager = async (payload: any) => {
-    if (!timesheet) throw new Error("No timesheet loaded");
-    return await timesheetsApi.shareWithManager(timesheet.id, payload);
+  const handleShareWithManager = async (id: string, payload: any) => {
+    if (!id) throw new Error("No timesheet ID provided");
+    return await timesheetsApi.shareWithManager(id, payload);
   };
 
   const handleTimesheetUpdated = (updated: Timesheet) => {
