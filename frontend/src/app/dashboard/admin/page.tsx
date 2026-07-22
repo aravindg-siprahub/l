@@ -4,16 +4,9 @@ import { useState, useEffect, useMemo } from 'react';
 import { formatDistanceToNow } from 'date-fns';
 import StatsCard from '@/components/dashboard/StatsCard';
 import ActivityFeed, { ActivityItem } from '@/components/dashboard/ActivityFeed';
-import QuickActions, { QuickAction } from '@/components/dashboard/QuickActions';
 import { adminApi } from '@/lib/admin';
 import { UserOut } from '@/lib/auth';
-import { Users, User, Briefcase, Landmark, UserPlus, FileText, LogIn } from 'lucide-react';
-
-const actions: QuickAction[] = [
-  { label: 'Add User', icon: <UserPlus size={18} />, href: '/dashboard/admin/users', color: 'indigo', description: 'Create account' },
-  { label: 'Manage Users', icon: <Users size={18} />, href: '/dashboard/admin/users', color: 'cyan', description: 'Manage access' },
-  { label: 'Audit Logs', icon: <FileText size={18} />, href: '/dashboard/admin/audit', color: 'zinc', description: 'Activity trail' },
-];
+import { Users, User, Briefcase, Landmark, UserPlus, LogIn, Activity } from 'lucide-react';
 
 export default function AdminDashboard() {
   const [users, setUsers] = useState<UserOut[]>([]);
@@ -92,11 +85,7 @@ export default function AdminDashboard() {
   }, [users]);
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">Admin Dashboard</h2>
-        <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">Platform overview and system management</p>
-      </div>
+    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
 
       {loading ? (
         <div className="p-8 text-center text-zinc-500">Loading dashboard...</div>
@@ -107,14 +96,9 @@ export default function AdminDashboard() {
             {stats.map(s => <StatsCard key={s.title} {...s} />)}
           </div>
 
-          {/* Main grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2">
-              <ActivityFeed items={activityFeed} scrollable={true} />
-            </div>
-            <div>
-              <QuickActions actions={actions} />
-            </div>
+          {/* Main Full-Width Recent Activity */}
+          <div className="w-full bg-white dark:bg-zinc-900 rounded-[24px] shadow-sm border border-zinc-200 dark:border-zinc-800 p-2">
+            <ActivityFeed items={activityFeed} scrollable={true} />
           </div>
         </>
       )}
