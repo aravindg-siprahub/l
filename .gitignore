@@ -28,3 +28,5 @@ Thumbs.db
 .claude
 .agents
 .gitignore
+.env
+.env.local
