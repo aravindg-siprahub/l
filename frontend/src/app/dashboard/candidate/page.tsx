@@ -77,15 +77,10 @@ export default function CandidateDashboard() {
   const recentTimesheets = useMemo(() => {
     return [...timesheets]
       .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
-      .slice(0, 5);
+      .slice(0, 50);
   }, [timesheets]);
 
-  const upcomingTimesheets = useMemo(() => {
-    return [...timesheets]
-      .filter(t => t.status === 'submitted' || t.status === 'client_approved' || t.shared_at)
-      .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
-      .slice(0, 2);
-  }, [timesheets]);
+
 
   const getStatusDetails = (ts: Timesheet) => {
     if (ts.status === 'client_rejected' || ts.status === 'finance_rejected') {
@@ -156,8 +151,8 @@ export default function CandidateDashboard() {
             ))}
           </div>
           
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2">
+          <div className="w-full">
+            <div>
               <Card className="h-full">
                 <CardHeader className="flex flex-row items-center justify-between border-b border-zinc-100 dark:border-zinc-800 pb-4">
                   <CardTitle className="text-lg">Recent Activity</CardTitle>
@@ -165,7 +160,7 @@ export default function CandidateDashboard() {
                     View all <ArrowRight size={14} className="ml-1" />
                   </Link>
                 </CardHeader>
-                <CardContent className="p-6">
+                <CardContent className="p-6 max-h-[400px] overflow-y-auto">
                   {recentTimesheets.length === 0 ? (
                     <div className="py-12 text-center flex flex-col items-center">
                       <div className="h-12 w-12 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center mb-4">
@@ -210,130 +205,6 @@ export default function CandidateDashboard() {
                   )}
                 </CardContent>
               </Card>
-            </div>
-            
-            <div className="space-y-6">
-              {/* Upcoming Status */}
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50 tracking-tight">Upcoming Status</h3>
-                  <Link href="/dashboard/candidate/timesheets" className="text-sm font-medium text-indigo-600 hover:text-indigo-700 dark:text-indigo-400">
-                    View all
-                  </Link>
-                </div>
-                {upcomingTimesheets.length > 0 ? (
-                  <div className="space-y-3">
-                    {upcomingTimesheets.map(ts => {
-                      const status = getStatusDetails(ts);
-                      return (
-                        <Card key={ts.id} className="bg-white dark:bg-zinc-950 hover:border-zinc-300 transition-colors">
-                          <CardContent className="p-4">
-                            <div className="flex items-start gap-3">
-                              <div className="h-10 w-10 shrink-0 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 flex items-center justify-center">
-                                <Calendar size={18} className="text-indigo-600 dark:text-indigo-400" />
-                              </div>
-                              <div className="min-w-0 flex-1">
-                                <div className="flex items-start justify-between gap-2">
-                                  <div className="min-w-0">
-                                    <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-50 truncate">
-                                      {format(parseISO(ts.period_start_date), 'MMM dd')} - {format(parseISO(ts.period_end_date), 'MMM dd, yyyy')}
-                                    </p>
-                                    <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1 truncate">
-                                      {ts.total_hours} Hours &bull; Submitted {formatDistanceToNow(parseISO(ts.updated_at), { addSuffix: true })}
-                                    </p>
-                                  </div>
-                                  <Badge variant={status.badge === 'success' ? 'warning' : status.badge} className="whitespace-nowrap shrink-0 mt-0.5">
-                                    {ts.status === 'client_approved' ? 'Under HR Review' : 'Awaiting Client Approval'}
-                                  </Badge>
-                                </div>
-                              </div>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      );
-                    })}
-                  </div>
-                ) : (
-                  <Card className="bg-white dark:bg-zinc-950">
-                    <CardContent className="p-6 text-center text-sm text-zinc-500">
-                      No upcoming status to track.
-                    </CardContent>
-                  </Card>
-                )}
-              </div>
-
-              {/* Quick Actions */}
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-base font-semibold text-zinc-900 dark:text-zinc-50 tracking-tight">Quick Actions</h3>
-                </div>
-                
-                <div className="grid grid-cols-2 gap-3">
-                  <Link href="/dashboard/candidate/timesheets/new" className="block group h-full">
-                    <Card className="h-full hover:border-indigo-300 dark:hover:border-indigo-800 transition-colors bg-white dark:bg-zinc-950 shadow-sm hover:shadow-md">
-                      <CardContent className="p-4 flex items-center gap-3">
-                        <div className="h-10 w-10 shrink-0 rounded-lg bg-indigo-50 dark:bg-indigo-500/10 flex items-center justify-center">
-                          <PlusCircle size={18} className="text-indigo-600 dark:text-indigo-400" />
-                        </div>
-                        <div className="min-w-0">
-                          <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-50 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors truncate">
-                            Submit Time
-                          </p>
-                          <p className="text-[11px] text-zinc-500 truncate mt-0.5">Log hours</p>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </Link>
-
-                  <Link href="/dashboard/candidate/timesheets" className="block group h-full">
-                    <Card className="h-full hover:border-blue-300 dark:hover:border-blue-800 transition-colors bg-white dark:bg-zinc-950 shadow-sm hover:shadow-md">
-                      <CardContent className="p-4 flex items-center gap-3">
-                        <div className="h-10 w-10 shrink-0 rounded-lg bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center">
-                          <Calendar size={18} className="text-blue-600 dark:text-blue-400" />
-                        </div>
-                        <div className="min-w-0">
-                          <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-50 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors truncate">
-                            Timesheets
-                          </p>
-                          <p className="text-[11px] text-zinc-500 truncate mt-0.5">View history</p>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </Link>
-
-                  <Link href="/dashboard/candidate/profile" className="block group h-full">
-                    <Card className="h-full hover:border-emerald-300 dark:hover:border-emerald-800 transition-colors bg-white dark:bg-zinc-950 shadow-sm hover:shadow-md">
-                      <CardContent className="p-4 flex items-center gap-3">
-                        <div className="h-10 w-10 shrink-0 rounded-lg bg-emerald-50 dark:bg-emerald-500/10 flex items-center justify-center">
-                          <UserCircle size={18} className="text-emerald-600 dark:text-emerald-400" />
-                        </div>
-                        <div className="min-w-0">
-                          <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-50 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors truncate">
-                            My Profile
-                          </p>
-                          <p className="text-[11px] text-zinc-500 truncate mt-0.5">Update details</p>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </Link>
-
-                  <Link href="/dashboard/candidate/reports" className="block group h-full">
-                    <Card className="h-full hover:border-orange-300 dark:hover:border-orange-800 transition-colors bg-white dark:bg-zinc-950 shadow-sm hover:shadow-md">
-                      <CardContent className="p-4 flex items-center gap-3">
-                        <div className="h-10 w-10 shrink-0 rounded-lg bg-orange-50 dark:bg-orange-500/10 flex items-center justify-center">
-                          <FileText size={18} className="text-orange-600 dark:text-orange-400" />
-                        </div>
-                        <div className="min-w-0">
-                          <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-50 group-hover:text-orange-600 dark:group-hover:text-orange-400 transition-colors truncate">
-                            Reports
-                          </p>
-                          <p className="text-[11px] text-zinc-500 truncate mt-0.5">View analytics</p>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </Link>
-                </div>
-              </div>
             </div>
           </div>
         </>
